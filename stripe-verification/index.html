@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maroughi Masonry Inc.</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .tagline {
+            font-size: 1.5rem;
+            opacity: 0.95;
+        }
+        .content {
+            padding: 4rem 0;
+        }
+        .services {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        .service-card {
+            padding: 2rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            transition: transform 0.3s;
+        }
+        .service-card:hover {
+            transform: translateY(-5px);
+            border-color: #667eea;
+        }
+        .service-card h3 {
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+        .contact {
+            background: #f5f5f5;
+            padding: 3rem 0;
+            text-align: center;
+        }
+        .contact-info {
+            margin-top: 2rem;
+        }
+        .contact-info p {
+            margin: 0.5rem 0;
+            font-size: 1.1rem;
+        }
+        footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Maroughi Masonry Inc.</h1>
+            <p class="tagline">Professional Masonry & Concrete Services in Hamilton, Ontario</p>
+        </div>
+    </header>
+
+    <section class="content">
+        <div class="container">
+            <h2 style="text-align: center; margin-bottom: 2rem;">Quality Craftsmanship Since 2020</h2>
+            
+            <div class="services">
+                <div class="service-card">
+                    <h3>Brick & Stone Work</h3>
+                    <p>Expert brick laying, stone masonry, and restoration services for residential and commercial properties.</p>
+                </div>
+                
+                <div class="service-card">
+                    <h3>Concrete Services</h3>
+                    <p>Driveways, foundations, patios, and decorative concrete installations built to last.</p>
+                </div>
+                
+                <div class="service-card">
+                    <h3>Repairs & Restoration</h3>
+                    <p>Professional repair and restoration of existing masonry structures and concrete work.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="contact">
+        <div class="container">
+            <h2>Contact Us</h2>
+            <div class="contact-info">
+                <p><strong>Phone:</strong> +1 289-237-4832</p>
+                <p><strong>Location:</strong> Hamilton, Ontario L8T 4L6</p>
+                <p><strong>Business:</strong> Maroughi Masonry Inc.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Maroughi Masonry Inc. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>

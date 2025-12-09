@@ -1,0 +1,476 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  clerkId     String   @unique
+  email       String   @unique
+  name        String?
+  company     String?
+  phone       String?
+  
+  // Business settings
+  businessName     String?
+  businessType     String?  // HVAC, Plumbing, Concrete, etc.
+  timezone         String   @default("America/New_York")
+  
+  // Subscription
+  subscriptionPlan String   @default("starter") // starter, pro, ultimate
+  subscriptionStatus String @default("trial") // trial, active, cancelled, past_due
+  trialEndsAt      DateTime?
+  hasUsedTrial     Boolean  @default(false) // Track if user has ever used a trial
+  trialStartedAt   DateTime? // When trial started
+  
+  // Stripe Subscription
+  stripeCustomerId       String?   @unique
+  stripeSubscriptionId   String?   @unique
+  stripePriceId          String?
+  stripeCurrentPeriodEnd DateTime?
+  
+  // Integrations
+  gmailConnected      Boolean  @default(false)
+  gmailEmail          String?
+  gmailAccessToken    String?
+  gmailRefreshToken   String?
+  calendarConnected   Boolean  @default(false)
+  calendarAccessToken String?
+  calendarRefreshToken String?
+  
+  // AI Settings
+  aiAutoApprove       Boolean  @default(false)
+  aiConversationsUsed Int      @default(0)
+  aiConversationsLimit Int?    // null = unlimited (ultimate plan)
+  lastResetAt         DateTime @default(now())
+  
+  leads            Lead[]
+  emailAccounts    EmailAccount[]
+  pricingTemplates PricingTemplate[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model EmailAccount {
+  id           String  @id @default(cuid())
+  userId       String
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  email        String
+  provider     String  // gmail, outlook, etc.
+  accessToken  String?
+  refreshToken String?
+  
+  isActive     Boolean @default(true)
+  lastSyncedAt DateTime?
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("email_accounts")
+}
+
+model Lead {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Contact info
+  name     String
+  email    String?
+  phone    String?
+  address  String?
+  
+  // Customer details (from QuickBooks-style form)
+  companyName      String?
+  title            String?  // Mr./Ms./Dr.
+  firstName        String?
+  middleInitial    String?
+  lastName         String?
+  jobTitle         String?
+  
+  // Phone numbers
+  mainPhone        String?
+  workPhone        String?
+  mobile           String?
+  fax              String?
+  
+  // Email addresses
+  mainEmail        String?
+  ccEmail          String?
+  
+  // Website and other
+  website          String?
+  other1           String?
+  
+  // Address details
+  invoiceBillToAddress String?
+  shipToAddress        String?
+  defaultShippingAddress Boolean @default(false)
+  
+  // Financial
+  openingBalance   Float?
+  openingBalanceDate DateTime?
+  
+  // Customer status
+  isActive         Boolean @default(true)
+  
+  // Lead details
+  source       String?  // email, phone, web form, etc.
+  serviceType  String?  // HVAC repair, concrete pour, etc.
+  description  String?
+  notes        String?  // Internal notes about the lead
+  priority     String   @default("medium") // low, medium, high, urgent
+  
+  // Pipeline stage
+  stage        String   @default("new") // new, contacted, quoted, scheduled, completed, lost
+  
+  // AI metadata
+  aiClassification String?  // lead, question, customer, problem
+  aiIntent         String?
+  sentiment        String?  // positive, neutral, negative
+  
+  // Scheduling
+  appointmentDate DateTime?
+  appointmentNotes String?
+  
+  messages  Message[]
+  quotes    Quote[]
+  invoices  Invoice[]
+  payments  Payment[]
+  jobs      Job[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, stage])
+  @@index([createdAt])
+  @@map("leads")
+}
+
+model Job {
+  id       String @id @default(cuid())
+  leadId   String
+  lead     Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  
+  // Job details
+  jobName          String
+  
+  // Opening balance
+  openingBalance     Float?
+  openingBalanceDate DateTime?
+  
+  // Address info (inherited from customer but can be overridden)
+  companyName        String?
+  title              String?
+  firstName          String?
+  middleInitial      String?
+  lastName           String?
+  jobTitle           String?
+  
+  // Contact info
+  mainPhone          String?
+  workPhone          String?
+  mobile             String?
+  fax                String?
+  mainEmail          String?
+  ccEmail            String?
+  website            String?
+  other1             String?
+  
+  // Address details
+  invoiceBillToAddress String?
+  shipToAddress        String?
+  defaultShippingAddress Boolean @default(false)
+  
+  // Job status
+  isActive           Boolean @default(true)
+  status             String @default("pending") // pending, in-progress, completed, cancelled
+  
+  // Job specifics
+  startDate          DateTime?
+  endDate            DateTime?
+  description        String?
+  notes              String?
+  
+  // Relations
+  quotes    Quote[]
+  invoices  Invoice[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([leadId])
+  @@index([status])
+  @@map("jobs")
+}
+
+model Message {
+  id       String @id @default(cuid())
+  leadId   String
+  lead     Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  
+  direction String  // inbound, outbound
+  channel   String  // email, sms, phone
+  
+  subject   String?
+  content   String
+  
+  // AI metadata
+  isAiGenerated       Boolean @default(false)
+  aiApprovalNeeded    Boolean @default(false)
+  aiApprovedAt        DateTime?
+  aiConfidence        Float?
+  aiClassification    String?
+  aiSentiment         String?
+  inReplyToId         String?  // Reference to message being replied to
+  
+  // Email specific
+  fromEmail  String?
+  toEmail    String?
+  gmailMessageId String? @unique
+  
+  // SMS specific
+  fromPhone  String?
+  toPhone    String?
+  
+  sentAt     DateTime?
+  readAt     DateTime?
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([leadId])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+model Quote {
+  id       String @id @default(cuid())
+  leadId   String
+  lead     Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  
+  jobId    String?
+  job      Job?   @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  
+  quoteNumber String  @unique
+  
+  // Quote details
+  title       String?
+  description String?
+  notes       String?
+  
+  // Pricing
+  subtotal    Float  @default(0)
+  tax         Float  @default(0)
+  discount    Float  @default(0)
+  total       Float  @default(0)
+  
+  // Status
+  status      String   @default("draft") // draft, sent, viewed, accepted, rejected
+  
+  // AI generated
+  isAiGenerated Boolean @default(false)
+  
+  items       QuoteItem[]
+  invoices    Invoice[]
+  
+  sentAt      DateTime?
+  viewedAt    DateTime?
+  acceptedAt  DateTime?
+  rejectedAt  DateTime?
+  expiresAt   DateTime?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([leadId])
+  @@index([status])
+  @@map("quotes")
+}
+
+model QuoteItem {
+  id       String @id @default(cuid())
+  quoteId  String
+  quote    Quote  @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  
+  description String
+  quantity    Int     @default(1)
+  unitPrice   Float
+  total       Float
+  progress    Int     @default(0) // Progress percentage 0-100
+  
+  createdAt   DateTime @default(now())
+
+  @@map("quote_items")
+}
+
+model PricingTemplate {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name        String
+  serviceType String
+  description String?
+  
+  // Pricing
+  basePrice   Float
+  unit        String?  // per sqft, per hour, per unit
+  
+  isActive    Boolean  @default(true)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@map("pricing_templates")
+}
+
+model AutomationRule {
+  id       String @id @default(cuid())
+  userId   String
+  
+  name        String
+  description String?
+  
+  // Trigger
+  triggerType String  // new_message, stage_change, time_based
+  triggerConditions String  // JSON string
+  
+  // Actions
+  actions     String  // JSON string [{type: 'send_email', params: {...}}, ...]
+  
+  isActive    Boolean  @default(true)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("automation_rules")
+}
+
+model ActivityLog {
+  id       String @id @default(cuid())
+  userId   String
+  
+  entityType String  // lead, message, quote
+  entityId   String
+  
+  action     String  // created, updated, deleted, sent, etc.
+  details    String?  // JSON string
+  
+  performedBy String  // user, ai, system
+  
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+model Invoice {
+  id            String @id @default(cuid())
+  invoiceNumber String @unique
+  
+  leadId        String
+  lead          Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  
+  jobId         String?
+  job           Job?   @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  
+  quoteId       String?
+  quote         Quote?  @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  
+  // Invoice details
+  title         String
+  description   String?
+  notes         String?
+  
+  // Financial
+  subtotal      Float
+  tax           Float
+  discount      Float  @default(0)
+  total         Float
+  amountPaid    Float  @default(0)
+  amountDue     Float
+  
+  // Status
+  status        String  @default("draft") // draft, sent, paid, partial, overdue, cancelled
+  
+  // Dates
+  issueDate     DateTime @default(now())
+  dueDate       DateTime
+  paidAt        DateTime?
+  
+  // Stripe Integration
+  stripePaymentLinkId    String?  @unique // Stripe Payment Link ID
+  stripePaymentIntentId  String?  // Stripe Payment Intent ID (from webhook)
+  
+  // Items
+  items         InvoiceItem[]
+  payments      Payment[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([leadId])
+  @@index([status])
+  @@index([dueDate])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          String @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  
+  description String
+  quantity    Float
+  unitPrice   Float
+  total       Float
+  
+  createdAt   DateTime @default(now())
+
+  @@map("invoice_items")
+}
+
+model Payment {
+  id            String @id @default(cuid())
+  paymentNumber String @unique
+  
+  invoiceId     String
+  invoice       Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  
+  leadId        String
+  lead          Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  
+  // Payment details
+  amount        Float
+  method        String  // cash, check, credit_card, bank_transfer, other
+  reference     String? // Check number, transaction ID, etc.
+  notes         String?
+  
+  // Status
+  status        String @default("completed") // pending, completed, failed, refunded
+  
+  paymentDate   DateTime @default(now())
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([invoiceId])
+  @@index([leadId])
+  @@index([paymentDate])
+  @@map("payments")
+}
