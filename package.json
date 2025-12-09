@@ -9,6 +9,9 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
+    "build:api": "cd apps/api && npm run build",
+    "start:api": "cd apps/api && npm run start:prod",
+    "migrate": "cd packages/database && npx prisma migrate deploy",
     "lint": "turbo run lint",
     "clean": "turbo run clean",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
