@@ -2,18 +2,13 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Bot, Mail, Calendar, MessageSquare, Zap, CheckCircle } from 'lucide-react';
 import Footer from '@/components/Footer';
-import { auth } from '@clerk/nextjs/server';
-import { redirect } from 'next/navigation';
+import HomeRedirect from '@/components/HomeRedirect';
 
-export default async function Home() {
-  const { userId } = await auth();
-  
-  if (userId) {
-    redirect('/dashboard');
-  }
-
+export default function Home() {
   return (
-    <div className="min-h-screen">
+    <>
+      <HomeRedirect />
+      <div className="min-h-screen">
       {/* Header */}
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -240,5 +235,6 @@ function PricingCard({
         ))}
       </ul>
     </div>
+    </>
   );
 }
