@@ -2,8 +2,16 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Bot, Mail, Calendar, MessageSquare, Zap, CheckCircle } from 'lucide-react';
 import Footer from '@/components/Footer';
+import { auth } from '@clerk/nextjs/server';
+import { redirect } from 'next/navigation';
 
-export default function Home() {
+export default async function Home() {
+  const { userId } = await auth();
+  
+  if (userId) {
+    redirect('/dashboard');
+  }
+
   return (
     <div className="min-h-screen">
       {/* Header */}
