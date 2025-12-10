@@ -2,17 +2,14 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Bot, Mail, Calendar, MessageSquare, Zap, CheckCircle } from 'lucide-react';
 import Footer from '@/components/Footer';
-import HomeRedirect from '@/components/HomeRedirect';
 
 export default function Home() {
   return (
-    <div>
-      <HomeRedirect />
-      <div className="min-h-screen">
-        {/* Header */}
-        <header className="border-b">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+    <div className="min-h-screen">
+      {/* Header */}
+      <header className="border-b">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
             <Bot className="h-8 w-8 text-primary" />
             <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">AutoStaff AI</span>
           </div>
@@ -234,7 +231,6 @@ function PricingCard({
           </li>
         ))}
       </ul>
-      </div>
     </div>
   );
 }
