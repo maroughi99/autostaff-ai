@@ -9,8 +9,8 @@ export default function Home() {
     <>
       <HomeRedirect />
       <div className="min-h-screen">
-      {/* Header */}
-      <header className="border-b">
+        {/* Header */}
+        <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Bot className="h-8 w-8 text-primary" />
@@ -234,7 +234,7 @@ function PricingCard({
           </li>
         ))}
       </ul>
-    </div>
+      </div>
     </>
   );
 }
