@@ -11,6 +11,7 @@ import { FileText, Download, Send, Eye, Calendar, DollarSign, User, Plus, X } fr
 import { downloadQuotePDF } from '@/lib/pdf-generator';
 import { useSubscription } from "@/hooks/useSubscription";
 import { FeatureLocked } from "@/components/FeatureLocked";
+import { API_URL } from '@/lib/utils';
 
 interface QuoteItem {
   id: string;
@@ -106,7 +107,7 @@ export default function QuotesPage() {
 
   const fetchQuotes = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/quotes?userId=${user?.id}`);
+      const response = await fetch(`${API_URL}/quotes?userId=${user?.id}`);
       const data = await response.json();
       // Ensure data is an array before setting
       setQuotes(Array.isArray(data) ? data : []);
@@ -120,7 +121,7 @@ export default function QuotesPage() {
 
   const fetchBusinessName = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/auth/me?userId=${user?.id}`);
+      const response = await fetch(`${API_URL}/auth/me?userId=${user?.id}`);
       const data = await response.json();
       if (data.businessName) {
         setBusinessName(data.businessName);
@@ -132,7 +133,7 @@ export default function QuotesPage() {
 
   const fetchFinancialBreakdown = async (quoteId: string) => {
     try {
-      const response = await fetch(`http://localhost:3001/quotes/${quoteId}/financial-breakdown?userId=${user?.id}`);
+      const response = await fetch(`${API_URL}/quotes/${quoteId}/financial-breakdown?userId=${user?.id}`);
       if (response.ok) {
         const data = await response.json();
         setFinancialBreakdown(data);
@@ -144,7 +145,7 @@ export default function QuotesPage() {
 
   const sendQuote = async (quoteId: string) => {
     try {
-      const response = await fetch(`http://localhost:3001/quotes/${quoteId}/send?userId=${user?.id}`, {
+      const response = await fetch(`${API_URL}/quotes/${quoteId}/send?userId=${user?.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -177,7 +178,7 @@ export default function QuotesPage() {
 
   const updateItemProgress = async (quoteId: string, itemId: string, progress: number) => {
     try {
-      const response = await fetch(`http://localhost:3001/quotes/${quoteId}/items/${itemId}/progress?userId=${user?.id}`, {
+      const response = await fetch(`${API_URL}/quotes/${quoteId}/items/${itemId}/progress?userId=${user?.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ progress }),
@@ -249,7 +250,7 @@ export default function QuotesPage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/invoices/progress-from-quote/${quoteId}?userId=${user?.id}`, {
+      const response = await fetch(`${API_URL}/invoices/progress-from-quote/${quoteId}?userId=${user?.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -273,7 +274,7 @@ export default function QuotesPage() {
 
   const updateQuoteStatus = async (quoteId: string, status: string) => {
     try {
-      await fetch(`http://localhost:3001/quotes/${quoteId}?userId=${user?.id}`, {
+      await fetch(`${API_URL}/quotes/${quoteId}?userId=${user?.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
@@ -299,7 +300,7 @@ export default function QuotesPage() {
 
     try {
       // First, get the database user ID
-      const userResponse = await fetch(`http://localhost:3001/auth/me?userId=${user.id}`);
+      const userResponse = await fetch(`${API_URL}/auth/me?userId=${user.id}`);
       if (!userResponse.ok) {
         throw new Error('Failed to fetch user data');
       }
@@ -309,7 +310,7 @@ export default function QuotesPage() {
       }
 
       // Create or find a lead for this recipient
-      const leadResponse = await fetch('http://localhost:3001/leads', {
+      const leadResponse = await fetch(`${API_URL}/leads`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -347,7 +348,7 @@ export default function QuotesPage() {
 
       console.log('Creating quote with data:', quoteData);
 
-      const response = await fetch('http://localhost:3001/quotes', {
+      const response = await fetch(`${API_URL}/quotes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -395,7 +396,7 @@ export default function QuotesPage() {
     
     setGeneratingQuote(true);
     try {
-      const response = await fetch(`http://localhost:3001/ai/generate-quote`, {
+      const response = await fetch(`${API_URL}/ai/generate-quote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

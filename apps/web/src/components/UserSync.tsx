@@ -2,13 +2,14 @@
 
 import { useUser } from '@clerk/nextjs';
 import { useEffect } from 'react';
+import { API_URL } from '@/lib/utils';
 
 export function UserSync() {
   const { user } = useUser();
 
   useEffect(() => {
     if (user?.id) {
-      fetch('http://localhost:3001/auth/sync-user', {
+      fetch(`${API_URL}/auth/sync-user`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

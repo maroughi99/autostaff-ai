@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useSubscription } from "@/hooks/useSubscription";
 import { FeatureLocked } from "@/components/FeatureLocked";
+import { API_URL } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -240,7 +241,7 @@ export default function LeadsPage() {
   const fetchLeads = async () => {
     try {
       const response = await fetch(
-        `http://localhost:3001/leads?userId=${user?.id}`
+        `${API_URL}/leads?userId=${user?.id}`
       );
       const data = await response.json();
       setLeads(data || []);
@@ -253,7 +254,7 @@ export default function LeadsPage() {
 
   const updateLeadStage = async (leadId: string, newStage: string) => {
     try {
-      await fetch(`http://localhost:3001/leads/${leadId}/stage?userId=${user?.id}`, {
+      await fetch(`${API_URL}/leads/${leadId}/stage?userId=${user?.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ stage: newStage }),
@@ -318,7 +319,7 @@ export default function LeadsPage() {
 
   const fetchLeadDetails = async (leadId: string) => {
     try {
-      const response = await fetch(`http://localhost:3001/leads/${leadId}?userId=${user?.id}`);
+      const response = await fetch(`${API_URL}/leads/${leadId}?userId=${user?.id}`);
       const data = await response.json();
       console.log("Lead details received:", data);
       console.log("Messages:", data.messages);
@@ -344,7 +345,7 @@ export default function LeadsPage() {
   const saveNotes = async () => {
     if (!selectedLeadId) return;
     try {
-      await fetch(`http://localhost:3001/leads/${selectedLeadId}?userId=${user?.id}`, {
+      await fetch(`${API_URL}/leads/${selectedLeadId}?userId=${user?.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ notes }),
@@ -358,7 +359,7 @@ export default function LeadsPage() {
   const createNewLead = async () => {
     if (!user?.id || !newLead.name) return;
     try {
-      await fetch(`http://localhost:3001/leads`, {
+      await fetch(`${API_URL}/leads`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -422,7 +423,7 @@ export default function LeadsPage() {
     if (!selectedLeadId || quoteForm.items.length === 0) return;
 
     try {
-      await fetch(`http://localhost:3001/quotes`, {
+      await fetch(`${API_URL}/quotes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -460,7 +461,7 @@ export default function LeadsPage() {
 
   const sendQuote = async (quoteId: string) => {
     try {
-      await fetch(`http://localhost:3001/quotes/${quoteId}/send`, {
+      await fetch(`${API_URL}/quotes/${quoteId}/send`, {
         method: "POST",
       });
       // Refresh lead details to update quote status
@@ -476,7 +477,7 @@ export default function LeadsPage() {
     if (!confirm("Are you sure you want to delete this quote?")) return;
     
     try {
-      await fetch(`http://localhost:3001/quotes/${quoteId}?userId=${user?.id}`, {
+      await fetch(`${API_URL}/quotes/${quoteId}?userId=${user?.id}`, {
         method: "DELETE",
       });
       // Refresh lead details to remove deleted quote
@@ -493,7 +494,7 @@ export default function LeadsPage() {
     
     setGeneratingQuote(true);
     try {
-      const response = await fetch(`http://localhost:3001/ai/generate-quote`, {
+      const response = await fetch(`${API_URL}/ai/generate-quote`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

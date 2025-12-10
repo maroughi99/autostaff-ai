@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSubscription } from "@/hooks/useSubscription";
 import { FeatureLocked } from "@/components/FeatureLocked";
+import { API_URL } from '@/lib/utils';
 import { 
   Mail, 
   Inbox, 
@@ -70,7 +71,7 @@ export default function InboxPage() {
   const loadMessages = async () => {
     setLoading(true);
     try {
-      const url = `http://localhost:3001/messages?userId=${user?.id}${filter !== 'all' ? `&filter=${filter}` : ''}`;
+      const url = `${API_URL}/messages?userId=${user?.id}${filter !== 'all' ? `&filter=${filter}` : ''}`;
       console.log('Fetching messages from:', url);
       const response = await fetch(url);
       console.log('Response status:', response.status);
@@ -106,12 +107,12 @@ export default function InboxPage() {
     setProcessing(true);
     try {
       // Approve the draft
-      await fetch(`http://localhost:3001/messages/${selectedMessage.id}/approve`, {
+      await fetch(`${API_URL}/messages/${selectedMessage.id}/approve`, {
         method: 'POST',
       });
       
       // Send the message
-      await fetch(`http://localhost:3001/messages/${selectedMessage.id}/send`, {
+      await fetch(`${API_URL}/messages/${selectedMessage.id}/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userClerkId: user.id }),
@@ -133,7 +134,7 @@ export default function InboxPage() {
     
     setProcessing(true);
     try {
-      await fetch(`http://localhost:3001/messages/${selectedMessage.id}/reject`, {
+      await fetch(`${API_URL}/messages/${selectedMessage.id}/reject`, {
         method: 'POST',
       });
       
@@ -160,7 +161,7 @@ export default function InboxPage() {
     
     setProcessing(true);
     try {
-      await fetch(`http://localhost:3001/messages/${selectedMessage.id}/edit`, {
+      await fetch(`${API_URL}/messages/${selectedMessage.id}/edit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

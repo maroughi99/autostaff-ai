@@ -6,6 +6,7 @@ import { Calendar, Clock, MapPin, Phone, Mail, User } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { useSubscription } from "@/hooks/useSubscription";
 import { FeatureLocked } from "@/components/FeatureLocked";
+import { API_URL } from '@/lib/utils';
 
 interface Appointment {
   id: string;
@@ -33,7 +34,7 @@ export default function CalendarPage() {
     if (!user?.id) return;
 
     try {
-      const response = await fetch(`http://localhost:3001/leads?userId=${user.id}`);
+      const response = await fetch(`${API_URL}/leads?userId=${user.id}`);
       if (response.ok) {
         const leads = await response.json();
         // Filter leads with appointments and sort by date

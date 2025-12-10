@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CreditCard, Calendar, TrendingUp, ArrowRight } from 'lucide-react';
+import { API_URL } from '@/lib/utils';
 
 export default function SubscriptionPage() {
   const { user } = useUser();
@@ -30,7 +31,7 @@ export default function SubscriptionPage() {
     try {
       if (!user?.id) return;
       // Fetch user data from database
-      const response = await fetch(`http://localhost:3001/auth/me?userId=${user.id}`);
+      const response = await fetch(`${API_URL}/auth/me?userId=${user.id}`);
       const userData = await response.json();
       console.log('Subscription data:', userData);
       setSubscription(userData);
@@ -45,13 +46,13 @@ export default function SubscriptionPage() {
     try {
       if (!user?.id) return;
       // First get the database user ID
-      const userResponse = await fetch(`http://localhost:3001/auth/me?userId=${user.id}`);
+      const userResponse = await fetch(`${API_URL}/auth/me?userId=${user.id}`);
       const userData = await userResponse.json();
       
       if (!userData.id) return;
 
       // Fetch billing history
-      const response = await fetch(`http://localhost:3001/stripe/billing-history/${userData.id}`);
+      const response = await fetch(`${API_URL}/stripe/billing-history/${userData.id}`);
       const data = await response.json();
       setInvoices(data.invoices || []);
     } catch (error) {
@@ -68,7 +69,7 @@ export default function SubscriptionPage() {
         throw new Error('User not logged in');
       }
       // First get the database user ID
-      const userResponse = await fetch(`http://localhost:3001/auth/me?userId=${user.id}`);
+      const userResponse = await fetch(`${API_URL}/auth/me?userId=${user.id}`);
       const userData = await userResponse.json();
 
       if (!userData.id) {
@@ -76,7 +77,7 @@ export default function SubscriptionPage() {
       }
 
       // Sync subscription from Stripe
-      const response = await fetch(`http://localhost:3001/stripe/sync-subscription/${userData.id}`, {
+      const response = await fetch(`${API_URL}/stripe/sync-subscription/${userData.id}`, {
         method: 'POST',
       });
 
@@ -102,14 +103,14 @@ export default function SubscriptionPage() {
       }
       
       // First get the database user ID
-      const userResponse = await fetch(`http://localhost:3001/auth/me?userId=${user.id}`);
+      const userResponse = await fetch(`${API_URL}/auth/me?userId=${user.id}`);
       const userData = await userResponse.json();
 
       if (!userData.id) {
         throw new Error('User not found');
       }
 
-      const response = await fetch('http://localhost:3001/stripe/create-portal-session', {
+      const response = await fetch(`${API_URL}/stripe/create-portal-session`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

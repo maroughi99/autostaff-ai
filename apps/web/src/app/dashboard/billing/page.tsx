@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useSubscription } from "@/hooks/useSubscription";
 import { FeatureLocked } from "@/components/FeatureLocked";
+import { API_URL } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -84,8 +85,8 @@ export default function BillingPage() {
   const loadInvoices = async () => {
     try {
       const url = filter === 'all' 
-        ? `http://localhost:3001/invoices?userId=${user?.id}`
-        : `http://localhost:3001/invoices?userId=${user?.id}&status=${filter}`;
+        ? `${API_URL}/invoices?userId=${user?.id}`
+        : `${API_URL}/invoices?userId=${user?.id}&status=${filter}`;
       
       const response = await fetch(url);
       if (response.ok) {
@@ -123,7 +124,7 @@ export default function BillingPage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/invoices/${invoiceId}/send?userId=${user.id}`, {
+      const response = await fetch(`${API_URL}/invoices/${invoiceId}/send?userId=${user.id}`, {
         method: 'POST',
       });
 
@@ -147,7 +148,7 @@ export default function BillingPage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/invoices/${invoiceId}?userId=${user?.id}`, {
+      const response = await fetch(`${API_URL}/invoices/${invoiceId}?userId=${user?.id}`, {
         method: 'DELETE',
       });
 
@@ -170,7 +171,7 @@ export default function BillingPage() {
     setRecordingPayment(true);
     try {
       const response = await fetch(
-        `http://localhost:3001/invoices/${selectedInvoice.id}/record-payment?userId=${user?.id}`,
+        `${API_URL}/invoices/${selectedInvoice.id}/record-payment?userId=${user?.id}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -204,7 +205,7 @@ export default function BillingPage() {
 
   const downloadPdf = async (invoiceId: string, invoiceNumber: string) => {
     try {
-      const response = await fetch(`http://localhost:3001/invoices/${invoiceId}/pdf?userId=${user?.id}`);
+      const response = await fetch(`${API_URL}/invoices/${invoiceId}/pdf?userId=${user?.id}`);
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);

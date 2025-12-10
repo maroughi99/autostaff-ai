@@ -5,6 +5,7 @@ import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser } from '@clerk/nextjs';
+import { API_URL } from '@/lib/utils';
 
 const plans = [
   {
@@ -81,7 +82,7 @@ export default function PricingPage() {
 
     try {
       // First, get the database user ID from Clerk ID
-      const userResponse = await fetch(`http://localhost:3001/auth/me?userId=${user.id}`);
+      const userResponse = await fetch(`${API_URL}/auth/me?userId=${user.id}`);
 
       if (!userResponse.ok) {
         throw new Error('Failed to fetch user data');
@@ -94,7 +95,7 @@ export default function PricingPage() {
       }
 
       // Now create checkout session with database user ID
-      const response = await fetch('http://localhost:3001/stripe/create-checkout-session', {
+      const response = await fetch(`${API_URL}/stripe/create-checkout-session`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

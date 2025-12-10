@@ -3,6 +3,7 @@
 import { useUser } from '@clerk/nextjs';
 import { useEffect, useState } from 'react';
 import { hasFeatureAccess, getAIConversationLimit, SubscriptionPlan } from '@/lib/subscription-limits';
+import { API_URL } from '@/lib/utils';
 
 export function useSubscription() {
   const { user } = useUser();
@@ -17,7 +18,7 @@ export function useSubscription() {
       }
 
       try {
-        const response = await fetch(`http://localhost:3001/auth/me?userId=${user.id}`);
+        const response = await fetch(`${API_URL}/auth/me?userId=${user.id}`);
         if (response.ok) {
           const data = await response.json();
           setSubscription(data);

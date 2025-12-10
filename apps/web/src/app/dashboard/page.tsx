@@ -4,6 +4,7 @@ import { useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mail, Users, FileText, TrendingUp, Bot, CheckCircle } from 'lucide-react';
+import { API_URL } from '@/lib/utils';
 
 export default function DashboardPage() {
   const { user } = useUser();
@@ -28,8 +29,8 @@ export default function DashboardPage() {
   const fetchStats = async () => {
     try {
       const [leadsRes, messagesRes] = await Promise.all([
-        fetch(`http://localhost:3001/leads?userId=${user?.id}`),
-        fetch(`http://localhost:3001/messages?userId=${user?.id}`),
+        fetch(`${API_URL}/leads?userId=${user?.id}`),
+        fetch(`${API_URL}/messages?userId=${user?.id}`),
       ]);
 
       const leads = await leadsRes.json();

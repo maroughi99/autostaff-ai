@@ -3,6 +3,7 @@
 import { useUser } from '@clerk/nextjs';
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { API_URL } from '@/lib/utils';
 
 export function SubscriptionGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoaded } = useUser();
@@ -26,7 +27,7 @@ export function SubscriptionGuard({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        const response = await fetch(`http://localhost:3001/auth/me?userId=${user.id}`);
+        const response = await fetch(`${API_URL}/auth/me?userId=${user.id}`);
         if (!response.ok) {
           router.push('/dashboard/subscription');
           return;

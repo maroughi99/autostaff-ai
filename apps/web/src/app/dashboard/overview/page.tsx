@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FileText, DollarSign, TrendingUp, Calendar, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
+import { API_URL } from '@/lib/utils';
 
 interface OverviewStats {
   overdueInvoices: { count: number; total: number };
@@ -30,7 +31,7 @@ export default function OverviewPage() {
 
   const fetchOverviewData = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/dashboard/overview?userId=${user?.id}`);
+      const response = await fetch(`${API_URL}/dashboard/overview?userId=${user?.id}`);
       const data = await response.json();
       setStats(data);
     } catch (error) {

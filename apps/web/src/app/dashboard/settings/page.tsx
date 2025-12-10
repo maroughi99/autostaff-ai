@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Mail, Calendar, Phone, CheckCircle, XCircle, Loader2, Settings as SettingsIcon, AlertCircle } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { useSearchParams } from 'next/navigation';
+import { API_URL } from '@/lib/utils';
 
 export default function SettingsPage() {
   const { user } = useUser();
@@ -47,7 +48,7 @@ export default function SettingsPage() {
     
     try {
       // Simple fetch without auth - backend will use user.id from URL or session
-      const response = await fetch(`http://localhost:3001/auth/me?userId=${user.id}`);
+      const response = await fetch(`${API_URL}/auth/me?userId=${user.id}`);
       
       if (response.ok) {
         const userData = await response.json();
@@ -79,7 +80,7 @@ export default function SettingsPage() {
     }
     setLoading(true);
     // Redirect to backend OAuth endpoint with calendar permissions
-    window.location.href = `http://localhost:3001/auth/gmail?userId=${user.id}&includeCalendar=true`;
+    window.location.href = `${API_URL}/auth/gmail?userId=${user.id}&includeCalendar=true`;
   };
 
   const connectCalendar = async () => {
@@ -91,7 +92,7 @@ export default function SettingsPage() {
 
     try {
       const newValue = !calendarConnected;
-      const response = await fetch('http://localhost:3001/auth/update-settings', {
+      const response = await fetch(`${API_URL}/auth/update-settings`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -118,7 +119,7 @@ export default function SettingsPage() {
     setBusinessSaved(false);
 
     try {
-      const response = await fetch('http://localhost:3001/auth/update-settings', {
+      const response = await fetch(`${API_URL}/auth/update-settings`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -144,7 +145,7 @@ export default function SettingsPage() {
 
     try {
       const newValue = !aiAutoApprove;
-      const response = await fetch('http://localhost:3001/auth/update-settings', {
+      const response = await fetch(`${API_URL}/auth/update-settings`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

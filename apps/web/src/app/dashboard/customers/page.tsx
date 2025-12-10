@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { User, Plus, X, Building2, Mail, Phone, MapPin, Globe, DollarSign, Briefcase, Search, FileText, Receipt, Calendar, MessageSquare, Settings, ChevronRight, ChevronDown, Download, Send, Eye, Trash2 } from 'lucide-react';
 import { useSubscription } from "@/hooks/useSubscription";
 import { FeatureLocked } from "@/components/FeatureLocked";
+import { API_URL } from '@/lib/utils';
 
 interface Job {
   id: string;
@@ -196,7 +197,7 @@ export default function CustomersPage() {
 
   const fetchCustomers = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/customers?userId=${user?.id}`);
+      const response = await fetch(`${API_URL}/customers?userId=${user?.id}`);
       const data = await response.json();
       setCustomers(Array.isArray(data) ? data : []);
     } catch (error) {
@@ -209,7 +210,7 @@ export default function CustomersPage() {
 
   const createCustomer = async () => {
     try {
-      const response = await fetch('http://localhost:3001/customers', {
+      const response = await fetch(`${API_URL}/customers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -264,7 +265,7 @@ export default function CustomersPage() {
 
   const fetchJobsForCustomer = async (customerId: string) => {
     try {
-      const response = await fetch(`http://localhost:3001/jobs?customerId=${customerId}&userId=${user?.id}`);
+      const response = await fetch(`${API_URL}/jobs?customerId=${customerId}&userId=${user?.id}`);
       const data = await response.json();
       const jobsList = Array.isArray(data) ? data : [];
       setJobs(jobsList);
@@ -278,7 +279,7 @@ export default function CustomersPage() {
 
   const fetchEstimatesForJob = async (jobId: string) => {
     try {
-      const response = await fetch(`http://localhost:3001/quotes?userId=${user?.id}`);
+      const response = await fetch(`${API_URL}/quotes?userId=${user?.id}`);
       const data = await response.json();
       // Filter quotes by jobId
       const jobEstimates = Array.isArray(data) ? data.filter((q: any) => q.jobId === jobId) : [];
@@ -291,7 +292,7 @@ export default function CustomersPage() {
 
   const fetchInvoicesForJob = async (jobId: string) => {
     try {
-      const response = await fetch(`http://localhost:3001/invoices?userId=${user?.id}`);
+      const response = await fetch(`${API_URL}/invoices?userId=${user?.id}`);
       const data = await response.json();
       // Filter invoices by jobId
       const jobInvoices = Array.isArray(data) ? data.filter((inv: any) => inv.jobId === jobId) : [];
@@ -337,7 +338,7 @@ export default function CustomersPage() {
   // Calculate total owing for all jobs
   const calculateAllJobTotals = async (jobsList: Job[]) => {
     try {
-      const response = await fetch(`http://localhost:3001/quotes?userId=${user?.id}`);
+      const response = await fetch(`${API_URL}/quotes?userId=${user?.id}`);
       const allEstimates = await response.json();
       
       const totals: Record<string, number> = {};
@@ -390,7 +391,7 @@ export default function CustomersPage() {
     }
     
     try {
-      const response = await fetch('http://localhost:3001/jobs', {
+      const response = await fetch(`${API_URL}/jobs`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -424,7 +425,7 @@ export default function CustomersPage() {
     }
     
     try {
-      const response = await fetch(`http://localhost:3001/jobs/${selectedJobForEdit.id}?userId=${user?.id}`, {
+      const response = await fetch(`${API_URL}/jobs/${selectedJobForEdit.id}?userId=${user?.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -484,7 +485,7 @@ export default function CustomersPage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/customers/${customerId}?userId=${user?.id}`, {
+      const response = await fetch(`${API_URL}/customers/${customerId}?userId=${user?.id}`, {
         method: 'DELETE',
       });
 
@@ -510,7 +511,7 @@ export default function CustomersPage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/jobs/${jobId}?userId=${user?.id}`, {
+      const response = await fetch(`${API_URL}/jobs/${jobId}?userId=${user?.id}`, {
         method: 'DELETE',
       });
 
@@ -557,7 +558,7 @@ export default function CustomersPage() {
     }
 
     try {
-      const response = await fetch('http://localhost:3001/quotes', {
+      const response = await fetch(`${API_URL}/quotes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -645,7 +646,7 @@ export default function CustomersPage() {
     
     setGeneratingQuote(true);
     try {
-      const response = await fetch(`http://localhost:3001/ai/generate-quote`, {
+      const response = await fetch(`${API_URL}/ai/generate-quote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -678,7 +679,7 @@ export default function CustomersPage() {
 
   const sendEstimate = async (estimateId: string) => {
     try {
-      const response = await fetch(`http://localhost:3001/quotes/${estimateId}/send?userId=${user?.id}`, {
+      const response = await fetch(`${API_URL}/quotes/${estimateId}/send?userId=${user?.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -724,7 +725,7 @@ export default function CustomersPage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/quotes/${estimateId}?userId=${user?.id}`, {
+      const response = await fetch(`${API_URL}/quotes/${estimateId}?userId=${user?.id}`, {
         method: 'DELETE',
       });
 
@@ -767,7 +768,7 @@ export default function CustomersPage() {
 
   const fetchFinancialBreakdown = async (estimateId: string) => {
     try {
-      const response = await fetch(`http://localhost:3001/quotes/${estimateId}/financial-breakdown?userId=${user?.id}`);
+      const response = await fetch(`${API_URL}/quotes/${estimateId}/financial-breakdown?userId=${user?.id}`);
       if (response.ok) {
         const data = await response.json();
         setFinancialBreakdown(data);
@@ -787,7 +788,7 @@ export default function CustomersPage() {
 
   const sendInvoice = async (invoiceId: string) => {
     try {
-      const response = await fetch(`http://localhost:3001/invoices/${invoiceId}/send?userId=${user?.id}`, {
+      const response = await fetch(`${API_URL}/invoices/${invoiceId}/send?userId=${user?.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
@@ -828,7 +829,7 @@ export default function CustomersPage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/invoices/${invoiceId}?userId=${user?.id}`, {
+      const response = await fetch(`${API_URL}/invoices/${invoiceId}?userId=${user?.id}`, {
         method: 'DELETE',
       });
 
@@ -851,7 +852,7 @@ export default function CustomersPage() {
 
   const updateItemProgress = async (estimateId: string, itemId: string, progress: number) => {
     try {
-      const response = await fetch(`http://localhost:3001/quotes/${estimateId}/items/${itemId}/progress?userId=${user?.id}`, {
+      const response = await fetch(`${API_URL}/quotes/${estimateId}/items/${itemId}/progress?userId=${user?.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ progress }),
@@ -931,7 +932,7 @@ export default function CustomersPage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/invoices/progress-from-quote/${estimateId}?userId=${user?.id}`, {
+      const response = await fetch(`${API_URL}/invoices/progress-from-quote/${estimateId}?userId=${user?.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
