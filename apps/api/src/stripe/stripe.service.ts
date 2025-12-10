@@ -171,6 +171,11 @@ export class StripeService {
 
     // Handle the event
     switch (event.type) {
+      // Checkout Events
+      case 'checkout.session.completed':
+        await this.handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
+        break;
+
       // Invoice Payment Events
       case 'payment_intent.succeeded':
         await this.handlePaymentSuccess(event.data.object as Stripe.PaymentIntent);
@@ -494,6 +499,31 @@ export class StripeService {
       'price_1SapgGGndNudz61YR2ky1Psy': 'ultimate',
     };
     return planMap[priceId] || 'starter';
+  }
+
+  /**
+   * Handle checkout session completed
+   */
+  private async handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+    try {
+      this.logger.log(`✅ Checkout completed for customer ${session.customer}`);
+      
+      // Get subscription ID from the session
+      const subscriptionId = session.subscription as string;
+      if (!subscriptionId) {
+        this.logger.warn('No subscription found in checkout session');
+        return;
+      }
+
+      // Fetch the full subscription details
+      const subscription = await this.stripe.subscriptions.retrieve(subscriptionId);
+      
+      // Call the subscription created handler to update the database
+      await this.handleSubscriptionCreated(subscription);
+      
+    } catch (error) {
+      this.logger.error('Failed to handle checkout completed:', error);
+    }
   }
 
   /**
