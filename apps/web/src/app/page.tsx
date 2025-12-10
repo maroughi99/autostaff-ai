@@ -2,10 +2,12 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Bot, Mail, Calendar, MessageSquare, Zap, CheckCircle } from 'lucide-react';
 import Footer from '@/components/Footer';
+import HomeRedirect from '@/components/HomeRedirect';
 
 export default function Home() {
   return (
     <div className="min-h-screen">
+      <HomeRedirect />
       {/* Header */}
       <header className="border-b">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
