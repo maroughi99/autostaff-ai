@@ -6,7 +6,7 @@ services:
     region: oregon
     plan: free
     buildCommand: npm install && cd packages/database && npx prisma generate && cd ../../apps/api && npm install && npm run build
-    startCommand: cd packages/database && npx prisma migrate deploy && cd ../../apps/api && node dist/main.js
+    startCommand: cd packages/database && npx prisma db push --accept-data-loss && cd ../../apps/api && node dist/main.js
     envVars:
       - key: NODE_ENV
         value: production
