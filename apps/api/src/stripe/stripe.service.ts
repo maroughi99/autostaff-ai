@@ -531,11 +531,16 @@ export class StripeService {
    */
   private async handleSubscriptionCreated(subscription: Stripe.Subscription) {
     try {
+      this.logger.log(`Processing subscription created: ${subscription.id}`);
+      this.logger.log(`Subscription metadata: ${JSON.stringify(subscription.metadata)}`);
+      
       const userId = subscription.metadata?.userId;
       if (!userId) {
-        this.logger.warn('Subscription missing userId in metadata');
+        this.logger.error(`❌ Subscription ${subscription.id} missing userId in metadata. Full metadata: ${JSON.stringify(subscription.metadata)}`);
         return;
       }
+
+      this.logger.log(`Found userId: ${userId} for subscription ${subscription.id}`);
 
       const priceId = subscription.items.data[0]?.price.id;
       const planName = this.getPlanNameFromPriceId(priceId);
@@ -574,12 +579,13 @@ export class StripeService {
         updateData.stripeCurrentPeriodEnd = new Date(currentPeriodEnd * 1000);
       }
 
-      await this.prisma.user.update({
+      const updatedUser = await this.prisma.user.update({
         where: { id: userId },
         data: updateData,
       });
 
       this.logger.log(`✅ Subscription created for user ${userId}: ${subscription.status}`);
+      this.logger.log(`✅ User updated - Status: ${updatedUser.subscriptionStatus}, Plan: ${updatedUser.subscriptionPlan}`);
     } catch (error) {
       this.logger.error('Failed to handle subscription created:', error);
     }
