@@ -1,6 +1,6 @@
 import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
-import { Bot, LayoutDashboard, Mail, Users, FileText, Settings, Zap, Calendar, DollarSign, CreditCard, PieChart } from 'lucide-react';
+import { Bot, LayoutDashboard, Mail, Users, FileText, Settings, Zap, Calendar, DollarSign, CreditCard, PieChart, Briefcase } from 'lucide-react';
 import { UserSync } from '@/components/UserSync';
 import { SubscriptionGuard } from '@/components/SubscriptionGuard';
 
@@ -34,7 +34,7 @@ export default function DashboardLayout({
             <NavLink href="/dashboard/leads" icon={<Users className="h-5 w-5" />}>
               Leads
             </NavLink>
-            <NavLink href="/dashboard/customers" icon={<Users className="h-5 w-5" />}>
+            <NavLink href="/dashboard/customers" icon={<Briefcase className="h-5 w-5" />}>
               Customers
             </NavLink>
             <NavLink href="/dashboard/calendar" icon={<Calendar className="h-5 w-5" />}>

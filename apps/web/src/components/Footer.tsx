@@ -9,7 +9,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
           <div>
-            <h3 className="text-white font-semibold text-lg mb-4">WorkBot AI</h3>
+            <h3 className="text-white font-semibold text-lg mb-4">AutoStaff AI</h3>
             <p className="text-sm text-slate-400">
               AI-powered business automation for modern contractors and service providers.
             </p>
@@ -59,13 +59,13 @@ export default function Footer() {
             <h4 className="text-white font-semibold mb-4">Contact</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="mailto:support@workbot-ai.com" className="hover:text-white transition-colors">
-                  support@workbot-ai.com
+                <a href="mailto:support@autostaff-ai.com" className="hover:text-white transition-colors">
+                  support@autostaff-ai.com
                 </a>
               </li>
               <li>
-                <a href="mailto:privacy@workbot-ai.com" className="hover:text-white transition-colors">
-                  privacy@workbot-ai.com
+                <a href="mailto:privacy@autostaff-ai.com" className="hover:text-white transition-colors">
+                  privacy@autostaff-ai.com
                 </a>
               </li>
             </ul>
@@ -73,7 +73,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-slate-800 mt-8 pt-8 text-center text-sm text-slate-400">
-          <p>&copy; {currentYear} WorkBot AI. All rights reserved.</p>
+          <p>&copy; {currentYear} AutoStaff AI. All rights reserved.</p>
         </div>
       </div>
     </footer>
