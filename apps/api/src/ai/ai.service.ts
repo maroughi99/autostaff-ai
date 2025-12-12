@@ -48,7 +48,7 @@ export class AiService {
           try {
             const response = await this.anthropic.messages.create({
               model,
-              max_tokens: 2048,
+              max_tokens: 8192,
               temperature,
               system: systemPrompt || 'You are a helpful AI assistant.',
               messages: [
@@ -503,40 +503,26 @@ Return ONLY valid JSON in this exact format:
 
     const prompt = `You are a pricing data extraction expert. Parse the following pricing guide into structured pricing items.
 
-Convert ALL pricing information into this exact JSON schema per item:
+Convert pricing info into this MINIMAL JSON schema:
 
 {
-  "name": "Service/Product Name",
-  "category": "Main Category",
-  "subcategory": "Subcategory (optional)",
-  "description": "Detailed description",
+  "name": "Service Name",
+  "category": "Category",
+  "subcategory": "",
+  "description": "Brief desc",
   "pricing": {
-    "model": "per_unit | flat_rate | hourly | per_sqft",
-    "unit": "each | sqft | hour | project",
-    "price": 0.00,
+    "model": "per_unit",
+    "unit": "each",
+    "price": 18.00,
     "currency": "CAD",
     "minimum_quantity": 0,
-    "minimum_charge": 0.00
+    "minimum_charge": 0
   },
-  "adjustments": {
-    "difficulty": { "easy": 1.0, "standard": 1.15, "difficult": 1.35 },
-    "height": { "0-6ft": 1.0, "6-12ft": 1.2, "12-20ft": 1.4 }
-  },
-  "costBreakdown": {
-    "labor": { "hours_per_unit": 0.0, "rate": 0.00 },
-    "materials": { "cost_per_unit": 0.00 }
-  },
-  "aiHints": {
-    "keywords": ["keyword1", "keyword2"],
-    "use_when": ["condition1", "condition2"],
-    "confidence_threshold": 0.7
-  },
-  "rules": {
-    "requires_site_visit": false,
-    "exclusions": ["what's not included"],
-    "notes": "special instructions"
-  },
-  "aiConfidence": 0.85
+  "adjustments": {},
+  "costBreakdown": {},
+  "aiHints": {"keywords": ["brick"]},
+  "rules": {},
+  "aiConfidence": 0.8
 }
 
 CRITICAL RULES:
