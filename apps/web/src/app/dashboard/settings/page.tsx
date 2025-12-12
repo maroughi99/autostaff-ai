@@ -17,6 +17,10 @@ export default function SettingsPage() {
   const [phoneConnected, setPhoneConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [businessName, setBusinessName] = useState('');
+  const [businessType, setBusinessType] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [timezone, setTimezone] = useState('America/New_York');
   const [savingBusiness, setSavingBusiness] = useState(false);
   const [businessSaved, setBusinessSaved] = useState(false);
   const [aiAutoApprove, setAiAutoApprove] = useState(false);
@@ -61,6 +65,18 @@ export default function SettingsPage() {
         }
         if (userData.businessName) {
           setBusinessName(userData.businessName);
+        }
+        if (userData.businessType) {
+          setBusinessType(userData.businessType);
+        }
+        if (userData.email) {
+          setEmail(userData.email);
+        }
+        if (userData.phone) {
+          setPhone(userData.phone);
+        }
+        if (userData.timezone) {
+          setTimezone(userData.timezone);
         }
         if (userData.aiAutoApprove !== undefined) {
           setAiAutoApprove(userData.aiAutoApprove);
@@ -125,7 +141,13 @@ export default function SettingsPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${user.id}`,
         },
-        body: JSON.stringify({ businessName }),
+        body: JSON.stringify({ 
+          businessName, 
+          businessType, 
+          email, 
+          phone, 
+          timezone 
+        }),
       });
 
       if (response.ok) {
@@ -183,26 +205,103 @@ export default function SettingsPage() {
           <span className="text-xl">🏢</span>
           Business Information
         </h3>
+        <p className="text-xs text-gray-500 mb-4">
+          This information helps our AI understand your business and provide relevant, industry-specific responses
+        </p>
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Business Name
-            </label>
-            <input
-              type="text"
-              value={businessName}
-              onChange={(e) => setBusinessName(e.target.value)}
-              placeholder="e.g., Acme Construction Co"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              This will appear on your quote PDFs and email signatures
-            </p>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Business Name *
+              </label>
+              <input
+                type="text"
+                value={businessName}
+                onChange={(e) => setBusinessName(e.target.value)}
+                placeholder="e.g., Joe's Plumbing"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Business Type *
+              </label>
+              <select
+                value={businessType}
+                onChange={(e) => setBusinessType(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              >
+                <option value="">Select your business type</option>
+                <option value="HVAC">HVAC</option>
+                <option value="Plumbing">Plumbing</option>
+                <option value="Electrical">Electrical</option>
+                <option value="Roofing">Roofing</option>
+                <option value="General Contracting">General Contracting</option>
+                <option value="Landscaping">Landscaping</option>
+                <option value="Painting">Painting</option>
+                <option value="Carpentry">Carpentry</option>
+                <option value="Flooring">Flooring</option>
+                <option value="Masonry">Masonry</option>
+                <option value="Pool Service">Pool Service</option>
+                <option value="Pest Control">Pest Control</option>
+                <option value="Cleaning Services">Cleaning Services</option>
+                <option value="Auto Repair">Auto Repair</option>
+                <option value="Appliance Repair">Appliance Repair</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Business Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="contact@business.com"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Business Phone
+              </label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="(555) 123-4567"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Timezone
+              </label>
+              <select
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              >
+                <option value="America/New_York">Eastern (ET)</option>
+                <option value="America/Chicago">Central (CT)</option>
+                <option value="America/Denver">Mountain (MT)</option>
+                <option value="America/Los_Angeles">Pacific (PT)</option>
+                <option value="America/Phoenix">Arizona (MST)</option>
+                <option value="America/Anchorage">Alaska (AKT)</option>
+                <option value="Pacific/Honolulu">Hawaii (HST)</option>
+              </select>
+            </div>
           </div>
+
           <div className="flex items-center gap-3">
             <Button
               onClick={saveBusinessInfo}
-              disabled={savingBusiness || !businessName}
+              disabled={savingBusiness || !businessName || !businessType}
               className="bg-indigo-600 hover:bg-indigo-700"
             >
               {savingBusiness ? (

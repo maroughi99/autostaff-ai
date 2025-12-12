@@ -120,7 +120,18 @@ export class AuthController {
   }
 
   @Patch('update-settings')
-  async updateSettings(@Req() req, @Body() body: { businessName?: string; aiAutoApprove?: boolean; calendarConnected?: boolean }) {
+  async updateSettings(
+    @Req() req, 
+    @Body() body: { 
+      businessName?: string; 
+      businessType?: string;
+      email?: string;
+      phone?: string;
+      timezone?: string;
+      aiAutoApprove?: boolean; 
+      calendarConnected?: boolean;
+    }
+  ) {
     const userId = req.headers.authorization?.replace('Bearer ', '');
     
     if (!userId) {
@@ -130,6 +141,18 @@ export class AuthController {
     const updateData: any = {};
     if (body.businessName !== undefined) {
       updateData.businessName = body.businessName;
+    }
+    if (body.businessType !== undefined) {
+      updateData.businessType = body.businessType;
+    }
+    if (body.email !== undefined) {
+      updateData.email = body.email;
+    }
+    if (body.phone !== undefined) {
+      updateData.phone = body.phone;
+    }
+    if (body.timezone !== undefined) {
+      updateData.timezone = body.timezone;
     }
     if (body.aiAutoApprove !== undefined) {
       updateData.aiAutoApprove = body.aiAutoApprove;
