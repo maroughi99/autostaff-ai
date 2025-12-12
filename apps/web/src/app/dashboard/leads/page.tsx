@@ -574,7 +574,7 @@ export default function LeadsPage() {
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >
-        <div className="grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {STAGES.map((stage) => {
           const stageLeads = getLeadsByStage(stage.id);
           return (

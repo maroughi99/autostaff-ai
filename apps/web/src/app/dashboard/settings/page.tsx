@@ -457,9 +457,9 @@ export default function SettingsPage() {
                 Connect your Gmail to automatically read and respond to customer emails
               </p>
               {emailConnected ? (
-                <div className="flex items-center gap-2 mt-2 p-2 bg-green-50 rounded">
+                <div className="flex items-center gap-2 mt-2 p-2 bg-green-50 rounded overflow-hidden">
                   <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span className="text-sm text-green-700 font-medium truncate break-all">
+                  <span className="text-sm text-green-700 font-medium break-all min-w-0">
                     Connected: {connectedEmail || user?.primaryEmailAddress?.emailAddress || 'your@email.com'}
                   </span>
                 </div>
