@@ -20,7 +20,8 @@ import {
   User,
   Calendar,
   MapPin,
-  Sparkles
+  Sparkles,
+  Trash
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -180,6 +181,54 @@ export default function InboxPage() {
     }
   };
 
+  const handleDelete = async (messageId: string, event?: React.MouseEvent) => {
+    if (event) {
+      event.stopPropagation();
+    }
+    if (!confirm('Are you sure you want to delete this message?')) return;
+    
+    setProcessing(true);
+    try {
+      await fetch(`${API_URL}/messages/${messageId}`, {
+        method: 'DELETE',
+      });
+      
+      if (selectedMessage?.id === messageId) {
+        setSelectedMessage(null);
+      }
+      loadMessages();
+    } catch (error) {
+      console.error('Failed to delete:', error);
+      alert('Failed to delete message');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleDelete = async (messageId: string, event?: React.MouseEvent) => {
+    if (event) {
+      event.stopPropagation();
+    }
+    if (!confirm('Are you sure you want to delete this message?')) return;
+    
+    setProcessing(true);
+    try {
+      await fetch(`${API_URL}/messages/${messageId}`, {
+        method: 'DELETE',
+      });
+      
+      if (selectedMessage?.id === messageId) {
+        setSelectedMessage(null);
+      }
+      loadMessages();
+    } catch (error) {
+      console.error('Failed to delete:', error);
+      alert('Failed to delete message');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   const getStageColor = (stage: string) => {
     switch (stage) {
       case 'new': return 'bg-blue-100 text-blue-800';
@@ -317,6 +366,14 @@ export default function InboxPage() {
                       </span>
                     </div>
                   </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={(e) => handleDelete(message.id, e)}
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             ))

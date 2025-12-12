@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { MessagesService } from './messages.service';
 import { SubscriptionGuard } from '../guards/subscription.guard';
 
@@ -64,5 +64,10 @@ export class MessagesController {
     @Body() data: { userClerkId: string },
   ) {
     return this.messagesService.sendMessage(id, data.userClerkId);
+  }
+
+  @Delete(':id')
+  async deleteMessage(@Param('id') id: string) {
+    return this.messagesService.deleteMessage(id);
   }
 }

@@ -178,4 +178,11 @@ export class MessagesService {
       throw new Error(`Failed to send message: ${error.message}`);
     }
   }
+
+  async deleteMessage(id: string) {
+    await this.prisma.message.delete({
+      where: { id },
+    });
+    return { success: true, message: 'Message deleted' };
+  }
 }
