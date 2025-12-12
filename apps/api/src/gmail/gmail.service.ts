@@ -165,8 +165,11 @@ export class GmailService {
   }
 
   async sendMessage(userId: string, to: string, subject: string, body: string, threadId?: string, inReplyTo?: string, references?: string) {
+    console.log('[GMAIL SERVICE] Sending message:', { userId, to, subject: subject.substring(0, 50), hasThreadId: !!threadId });
+    
     try {
       const gmail = await this.getGmailClient(userId);
+      console.log('[GMAIL SERVICE] Gmail client obtained successfully');
 
       // Convert plain text line breaks to HTML
       const htmlBody = body
@@ -208,14 +211,18 @@ export class GmailService {
         requestBody.threadId = threadId;
       }
 
+      console.log('[GMAIL SERVICE] Calling Gmail API to send message...');
       const response = await gmail.users.messages.send({
         userId: 'me',
         requestBody,
       });
 
+      console.log('[GMAIL SERVICE] Message sent successfully! Gmail ID:', response.data.id);
       return response.data;
     } catch (error) {
+      console.error('[GMAIL SERVICE] Send failed:', error.message, error.response?.data);
       if (error.message?.includes('invalid_grant')) {
+        console.log('[GMAIL SERVICE] Token expired, refreshing...');
         await this.refreshAccessToken(userId);
         return this.sendMessage(userId, to, subject, body);
       }

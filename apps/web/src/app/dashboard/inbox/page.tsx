@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useSubscription } from "@/hooks/useSubscription";
 import { FeatureLocked } from "@/components/FeatureLocked";
 import { API_URL } from '@/lib/utils';
+import { toast } from 'sonner';
 import { 
   Mail, 
   Inbox, 
@@ -108,22 +109,35 @@ export default function InboxPage() {
     setProcessing(true);
     try {
       // Approve the draft
-      await fetch(`${API_URL}/messages/${selectedMessage.id}/approve`, {
+      const approveRes = await fetch(`${API_URL}/messages/${selectedMessage.id}/approve`, {
         method: 'POST',
       });
       
+      if (!approveRes.ok) {
+        throw new Error(`Approve failed: ${approveRes.statusText}`);
+      }
+      
       // Send the message
-      await fetch(`${API_URL}/messages/${selectedMessage.id}/send`, {
+      const sendRes = await fetch(`${API_URL}/messages/${selectedMessage.id}/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userClerkId: user.id }),
       });
       
-      alert('Message sent successfully!');
+      if (!sendRes.ok) {
+        const errorData = await sendRes.json().catch(() => ({ message: sendRes.statusText }));
+        throw new Error(errorData.message || 'Failed to send message');
+      }
+      
+      const result = await sendRes.json();
+      console.log('Send result:', result);
+      
+      toast.success('Message sent successfully! ✉️');
+      setSelectedMessage(null);
       loadMessages();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to send message:', error);
-      alert('Failed to send message');
+      toast.error(error.message || 'Failed to send message');
     } finally {
       setProcessing(false);
     }
@@ -135,16 +149,20 @@ export default function InboxPage() {
     
     setProcessing(true);
     try {
-      await fetch(`${API_URL}/messages/${selectedMessage.id}/reject`, {
+      const res = await fetch(`${API_URL}/messages/${selectedMessage.id}/reject`, {
         method: 'POST',
       });
       
-      alert('Draft rejected');
+      if (!res.ok) {
+        throw new Error('Failed to reject draft');
+      }
+      
+      toast.success('Draft rejected');
       setSelectedMessage(null);
       loadMessages();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to reject:', error);
-      alert('Failed to reject draft');
+      toast.error(error.message || 'Failed to reject draft');
     } finally {
       setProcessing(false);
     }

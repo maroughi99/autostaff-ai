@@ -133,6 +133,8 @@ export class MessagesService {
   }
 
   async sendMessage(messageId: string, userClerkId: string) {
+    console.log('[SEND MESSAGE] Starting send for message:', messageId, 'userClerkId:', userClerkId);
+    
     const message = await this.prisma.message.findUnique({
       where: { id: messageId },
       include: {
@@ -148,21 +150,35 @@ export class MessagesService {
     });
 
     if (!message) {
+      console.error('[SEND MESSAGE] Message not found:', messageId);
       throw new Error('Message not found');
     }
 
+    console.log('[SEND MESSAGE] Message details:', {
+      id: message.id,
+      toEmail: message.toEmail,
+      subject: message.subject,
+      leadName: message.lead?.name,
+      direction: message.direction,
+    });
+
     if (!message.toEmail) {
+      console.error('[SEND MESSAGE] No recipient email');
       throw new Error('No recipient email');
     }
 
     // Send via Gmail
     try {
-      await this.gmailService.sendMessage(
+      console.log('[SEND MESSAGE] Calling Gmail service to send to:', message.toEmail);
+      
+      const gmailResult = await this.gmailService.sendMessage(
         userClerkId,
         message.toEmail,
         message.subject || 'Re: Your inquiry',
         message.content,
       );
+
+      console.log('[SEND MESSAGE] Gmail send successful, result:', gmailResult);
 
       // Mark as sent
       await this.prisma.message.update({
@@ -173,8 +189,10 @@ export class MessagesService {
         },
       });
 
-      return { success: true };
+      console.log('[SEND MESSAGE] Message marked as sent in database');
+      return { success: true, gmailMessageId: gmailResult.id };
     } catch (error) {
+      console.error('[SEND MESSAGE] Failed to send:', error.message, error.stack);
       throw new Error(`Failed to send message: ${error.message}`);
     }
   }
