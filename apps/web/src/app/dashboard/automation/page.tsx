@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Bot, CheckCircle, Zap, MessageSquare, Mail, Users, Clock, Save, Loader2, Calendar, DollarSign, Globe, Briefcase } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { API_URL } from '@/lib/utils';
+import { toast } from 'sonner';
 
 export default function AutomationPage() {
   const { user } = useUser();
@@ -193,14 +194,13 @@ export default function AutomationPage() {
       });
 
       if (response.ok) {
-        // Show success feedback
-        alert('Automation settings saved successfully!');
+        toast.success('Automation settings saved successfully! ⚙️');
       } else {
         throw new Error('Failed to save settings');
       }
     } catch (error) {
       console.error('Failed to save automation settings:', error);
-      alert('Failed to save settings. Please try again.');
+      toast.error('Failed to save settings. Please try again.');
     } finally {
       setSaving(false);
     }
