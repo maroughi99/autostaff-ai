@@ -145,7 +145,7 @@ export default function SettingsPage() {
           businessName, 
           businessType, 
           email, 
-          phone, 
+          phone, // This maps to User.phone in database
           timezone 
         }),
       });
@@ -153,9 +153,14 @@ export default function SettingsPage() {
       if (response.ok) {
         setBusinessSaved(true);
         setTimeout(() => setBusinessSaved(false), 3000);
+      } else {
+        const errorText = await response.text();
+        console.error('Failed to save:', errorText);
+        alert('Failed to save settings');
       }
     } catch (error) {
       console.error('Failed to save business info:', error);
+      alert('Failed to save settings');
     } finally {
       setSavingBusiness(false);
     }
