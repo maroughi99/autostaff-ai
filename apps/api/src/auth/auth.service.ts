@@ -10,6 +10,27 @@ export class AuthService {
       where: { clerkId: clerkUserId },
     });
 
+    // Admin emails get ultimate plan with unlimited features
+    const emailLowercase = email.toLowerCase().trim();
+    const adminEmails = ['sarkon.shlemoon@gmail.com', 'sarkonshlemoon@gmail.com'];
+    const isAdmin = adminEmails.includes(emailLowercase);
+
+    // If user exists and is admin, upgrade them to ultimate plan
+    if (user && isAdmin) {
+      if (user.subscriptionPlan !== 'ultimate' || user.subscriptionStatus !== 'active') {
+        user = await this.prisma.user.update({
+          where: { id: user.id },
+          data: {
+            subscriptionPlan: 'ultimate',
+            subscriptionStatus: 'active',
+            aiConversationsLimit: null, // unlimited
+            hasUsedTrial: true,
+          },
+        });
+      }
+      return user;
+    }
+
     if (!user) {
       // Check if this email has been used before for a trial (prevent abuse)
       const emailLowercase = email.toLowerCase().trim();
