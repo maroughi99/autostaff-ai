@@ -39,13 +39,17 @@ export class EmailPollerService {
         } catch (error) {
           this.logger.error(
             `Error processing emails for user ${user.id}:`,
-            error,
+            error.stack || error,
           );
+          // Continue to next user even if this one fails
         }
       }
     } catch (error) {
-      this.logger.error('Error in email polling:', error);
+      this.logger.error('Error in email polling:', error.stack || error);
+      // Cron will continue and retry next minute
     }
+    
+    this.logger.log('✅ Email polling cycle complete');
   }
 
   private async processUserEmails(userId: string, clerkId: string) {

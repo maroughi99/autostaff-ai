@@ -23,8 +23,6 @@ export default function SettingsPage() {
   const [timezone, setTimezone] = useState('America/New_York');
   const [savingBusiness, setSavingBusiness] = useState(false);
   const [businessSaved, setBusinessSaved] = useState(false);
-  const [aiAutoApprove, setAiAutoApprove] = useState(false);
-  const [savingAutoApprove, setSavingAutoApprove] = useState(false);
 
   useEffect(() => {
     // Check if returning from OAuth callback
@@ -77,9 +75,6 @@ export default function SettingsPage() {
         }
         if (userData.timezone) {
           setTimezone(userData.timezone);
-        }
-        if (userData.aiAutoApprove !== undefined) {
-          setAiAutoApprove(userData.aiAutoApprove);
         }
       }
     } catch (error) {
@@ -163,31 +158,6 @@ export default function SettingsPage() {
       alert('Failed to save settings');
     } finally {
       setSavingBusiness(false);
-    }
-  };
-
-  const toggleAutoApprove = async () => {
-    if (!user?.id) return;
-    setSavingAutoApprove(true);
-
-    try {
-      const newValue = !aiAutoApprove;
-      const response = await fetch(`${API_URL}/auth/update-settings`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${user.id}`,
-        },
-        body: JSON.stringify({ aiAutoApprove: newValue }),
-      });
-
-      if (response.ok) {
-        setAiAutoApprove(newValue);
-      }
-    } catch (error) {
-      console.error('Failed to toggle auto-approve:', error);
-    } finally {
-      setSavingAutoApprove(false);
     }
   };
 
@@ -328,57 +298,6 @@ export default function SettingsPage() {
               </span>
             )}
           </div>
-        </div>
-      </Card>
-
-      {/* AI Auto-Approve Card */}
-      <Card className="p-6 mb-6 border-2 border-purple-200 bg-gradient-to-br from-white to-purple-50">
-        <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-          <span className="text-xl">🤖</span>
-          AI Auto-Approve
-        </h3>
-        <div className="space-y-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <p className="text-sm text-gray-700 mb-2">
-                When enabled, AI-generated email responses will be sent automatically without requiring manual approval.
-              </p>
-              <p className="text-xs text-gray-500">
-                {aiAutoApprove ? (
-                  <span className="text-orange-600 font-medium">⚠️ Messages will send automatically - use with caution</span>
-                ) : (
-                  <span className="text-green-600 font-medium">✓ You'll review each message before sending (recommended)</span>
-                )}
-              </p>
-            </div>
-            <Button
-              onClick={toggleAutoApprove}
-              disabled={savingAutoApprove || !emailConnected}
-              className={aiAutoApprove ? 'bg-orange-600 hover:bg-orange-700' : 'bg-green-600 hover:bg-green-700'}
-            >
-              {savingAutoApprove ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Updating...
-                </>
-              ) : aiAutoApprove ? (
-                <>
-                  <XCircle className="mr-2 h-4 w-4" />
-                  Turn Off
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Turn On
-                </>
-              )}
-            </Button>
-          </div>
-          {!emailConnected && (
-            <div className="text-xs text-gray-500 bg-gray-100 p-2 rounded">
-              Connect Gmail first to enable auto-approve
-            </div>
-          )}
         </div>
       </Card>
 

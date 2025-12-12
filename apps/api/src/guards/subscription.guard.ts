@@ -51,6 +51,7 @@ export class SubscriptionGuard implements CanActivate {
         ],
       },
       select: {
+        email: true,
         stripeSubscriptionId: true,
         subscriptionStatus: true,
         subscriptionPlan: true,
@@ -65,6 +66,23 @@ export class SubscriptionGuard implements CanActivate {
         'Active subscription required',
         HttpStatus.PAYMENT_REQUIRED,
       );
+    }
+
+    // Admin users bypass all subscription checks
+    const adminEmails = [
+      'tonymaroughi@gmail.com',
+      'sarkon.shlemoon@gmail.com',
+      'sarkonshlemoon@gmail.com',
+      'gtaconcretemasonryinc@gmail.com',
+    ];
+    
+    if (user.email && adminEmails.includes(user.email.toLowerCase())) {
+      request.userSubscription = {
+        plan: 'ultimate',
+        status: 'active',
+        stripeSubscriptionId: 'admin_bypass',
+      };
+      return true;
     }
 
     // Check if user has active subscription or trial
