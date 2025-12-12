@@ -566,7 +566,26 @@ Return ONLY a JSON array of pricing items. No explanation, just the array.`;
         cleanResponse = cleanResponse.replace(/^```json\s*\n?/, '').replace(/\n?```\s*$/, '');
       }
 
-      const items = JSON.parse(cleanResponse);
+      // Log the cleaned response for debugging
+      this.logger.debug(`Cleaned AI response length: ${cleanResponse.length} chars`);
+
+      let items;
+      try {
+        items = JSON.parse(cleanResponse);
+      } catch (parseError) {
+        this.logger.error('JSON parse error:', parseError.message);
+        this.logger.error('Response snippet:', cleanResponse.substring(0, 500));
+        
+        // Try to fix common JSON issues
+        cleanResponse = cleanResponse
+          .replace(/\\n/g, ' ')  // Replace literal \n with space
+          .replace(/\n/g, ' ')   // Replace actual newlines with space
+          .replace(/\r/g, '')    // Remove carriage returns
+          .replace(/\t/g, ' ')   // Replace tabs with space
+          .replace(/  +/g, ' '); // Replace multiple spaces with single space
+        
+        items = JSON.parse(cleanResponse);
+      }
       
       // Validate each item
       const validated = items.map((item: any) => {
@@ -580,7 +599,7 @@ Return ONLY a JSON array of pricing items. No explanation, just the array.`;
       return validated;
 
     } catch (error) {
-      this.logger.error('Failed to parse pricing guide:', error);
+      this.logger.error('Failed to parse pricing guide:', error.message);
       throw new Error('AI parsing failed');
     }
   }
