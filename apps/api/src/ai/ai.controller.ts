@@ -60,8 +60,14 @@ export class AiController {
     }
 
     try {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
+      // Find user by Clerk ID or database ID
+      const user = await this.prisma.user.findFirst({
+        where: {
+          OR: [
+            { id: userId },
+            { clerkId: userId },
+          ],
+        },
         select: {
           aiAutoApprove: true,
           automationSettings: true,
@@ -69,18 +75,20 @@ export class AiController {
       });
 
       if (!user) {
+        this.logger.error(`User not found: ${userId}`);
         return { error: 'User not found' };
       }
 
       // Parse automation settings if they exist
       const settings = user.automationSettings ? JSON.parse(user.automationSettings as string) : {};
 
+      this.logger.log(`📖 Loaded automation settings for user ${userId}`);
       return {
         aiAutoApprove: user.aiAutoApprove,
         ...settings,
       };
     } catch (error) {
-      this.logger.error('Failed to get automation settings:', error);
+      this.logger.error('Failed to get automation settings:', error.message);
       return { error: 'Failed to load settings' };
     }
   }
