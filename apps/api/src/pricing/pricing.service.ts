@@ -11,7 +11,7 @@ export class PricingService {
     private aiService: AiService,
   ) {}
 
-  async parseAndStorePricingGuide(userId: string, file: Express.Multer.File) {
+  async parseAndStorePricingGuide(userId: string, file: any) {
     try {
       this.logger.log(`📄 Processing pricing guide for user ${userId}: ${file.originalname}`);
 
@@ -216,7 +216,7 @@ export class PricingService {
     }
   }
 
-  private async extractTextFromFile(file: Express.Multer.File): Promise<string> {
+  private async extractTextFromFile(file: any): Promise<string> {
     const content = file.buffer.toString('utf-8');
     return content;
   }

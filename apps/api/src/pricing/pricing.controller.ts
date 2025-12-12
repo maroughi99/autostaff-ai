@@ -10,7 +10,7 @@ export class PricingController {
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
   async uploadPricingGuide(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: any,
     @Body('userId') userId: string,
   ) {
     return this.pricingService.parseAndStorePricingGuide(userId, file);

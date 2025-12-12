@@ -577,4 +577,4 @@ Return ONLY a JSON array of pricing items. No explanation, just the array.`;
       this.logger.error('Failed to parse pricing guide:', error);
       throw new Error('AI parsing failed');
     }
-  }
+  }}
