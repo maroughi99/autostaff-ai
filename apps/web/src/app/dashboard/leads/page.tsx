@@ -244,9 +244,10 @@ export default function LeadsPage() {
         `${API_URL}/leads?userId=${user?.id}`
       );
       const data = await response.json();
-      setLeads(data || []);
+      setLeads(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Failed to fetch leads:", error);
+      setLeads([]);
     } finally {
       setLoading(false);
     }
