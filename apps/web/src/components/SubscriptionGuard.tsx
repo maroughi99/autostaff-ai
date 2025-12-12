@@ -33,6 +33,15 @@ export function SubscriptionGuard({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      // Admin bypass - grant full access
+      const adminEmails = ['sarkon.shlemoon@gmail.com'];
+      const userEmail = user.primaryEmailAddress?.emailAddress?.toLowerCase();
+      if (userEmail && adminEmails.includes(userEmail)) {
+        setHasAccess(true);
+        setIsChecking(false);
+        return;
+      }
+
       // Set a timeout to prevent infinite loading
       timeoutId = setTimeout(() => {
         console.warn('Subscription check timed out, allowing access');

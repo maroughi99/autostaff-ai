@@ -13,6 +13,10 @@ export class AuthService {
     if (!user) {
       // Check if this email has been used before for a trial (prevent abuse)
       const emailLowercase = email.toLowerCase().trim();
+      
+      // Admin emails get ultimate plan with unlimited features
+      const adminEmails = ['sarkon.shlemoon@gmail.com'];
+      const isAdmin = adminEmails.includes(emailLowercase);
       const existingUserWithEmail = await this.prisma.user.findFirst({
         where: { 
           email: emailLowercase,
@@ -32,10 +36,12 @@ export class AuthService {
           clerkId: clerkUserId,
           email: emailLowercase,
           name,
-          hasUsedTrial: shouldGrantTrial, // Only mark true if granting trial
-          subscriptionStatus: shouldGrantTrial ? 'trial' : 'cancelled',
-          trialStartedAt: shouldGrantTrial ? new Date() : null,
-          trialEndsAt: shouldGrantTrial ? trialEndsAt : null,
+          hasUsedTrial: isAdmin ? true : shouldGrantTrial,
+          subscriptionStatus: isAdmin ? 'active' : (shouldGrantTrial ? 'trial' : 'cancelled'),
+          subscriptionPlan: isAdmin ? 'ultimate' : 'starter',
+          trialStartedAt: shouldGrantTrial && !isAdmin ? new Date() : null,
+          trialEndsAt: shouldGrantTrial && !isAdmin ? trialEndsAt : null,
+          aiConversationsLimit: isAdmin ? null : undefined, // null = unlimited for admin
         },
       });
     } else if (user.subscriptionStatus === 'trial' && !user.hasUsedTrial) {
