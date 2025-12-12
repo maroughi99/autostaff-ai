@@ -13,9 +13,16 @@ export function SubscriptionGuard({ children }: { children: React.ReactNode }) {
   const [hasAccess, setHasAccess] = useState(false);
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
     const checkSubscription = async () => {
-      if (!isLoaded || !user) {
+      if (!isLoaded) {
+        return;
+      }
+
+      if (!user) {
         setIsChecking(false);
+        setHasAccess(true); // Allow access if not logged in (Clerk will handle auth)
         return;
       }
 
@@ -26,8 +33,20 @@ export function SubscriptionGuard({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      // Set a timeout to prevent infinite loading
+      timeoutId = setTimeout(() => {
+        console.warn('Subscription check timed out, allowing access');
+        setHasAccess(true);
+        setIsChecking(false);
+      }, 5000); // 5 second timeout
+
       try {
-        const response = await fetch(`${API_URL}/auth/me?userId=${user.id}`);
+        const response = await fetch(`${API_URL}/auth/me?userId=${user.id}`, {
+          signal: AbortSignal.timeout(4000), // 4 second fetch timeout
+        });
+        
+        clearTimeout(timeoutId);
+        
         if (!response.ok) {
           router.push('/dashboard/subscription');
           return;
@@ -35,10 +54,10 @@ export function SubscriptionGuard({ children }: { children: React.ReactNode }) {
 
         const userData = await response.json();
         
-        // Check if user has an active subscription
+        // Check if user has an active subscription or trial
         const hasActiveSubscription = 
           userData.stripeSubscriptionId && 
-          userData.subscriptionStatus !== 'cancelled';
+          (userData.subscriptionStatus === 'active' || userData.subscriptionStatus === 'trial');
 
         if (!hasActiveSubscription) {
           router.push('/dashboard/subscription?message=subscription_required');
@@ -46,14 +65,20 @@ export function SubscriptionGuard({ children }: { children: React.ReactNode }) {
           setHasAccess(true);
         }
       } catch (error) {
+        clearTimeout(timeoutId);
         console.error('Failed to check subscription:', error);
-        router.push('/dashboard/subscription');
+        // On error, allow access to avoid blocking users
+        setHasAccess(true);
       } finally {
         setIsChecking(false);
       }
     };
 
     checkSubscription();
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [user, isLoaded, router, pathname]);
 
   if (!isLoaded || isChecking) {
@@ -61,13 +86,13 @@ export function SubscriptionGuard({ children }: { children: React.ReactNode }) {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking subscription...</p>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );
   }
 
-  if (!hasAccess) {
+  if (!hasAccess && user) {
     return null;
   }
 

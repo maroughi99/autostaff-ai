@@ -51,7 +51,7 @@ export default function Home() {
               </Button>
             </div>
             <p className="text-sm text-muted-foreground mt-4">
-              7-day free trial • No credit card required
+              7-day free trial • Cancel anytime
             </p>
           </div>
         </div>

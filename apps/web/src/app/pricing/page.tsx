@@ -143,7 +143,7 @@ export default function PricingPage() {
             Choose Your Plan
           </h1>
           <p className="text-xl text-gray-600 mb-8">
-            Start with a 7-day free trial. No credit card required.
+            Start with a 7-day free trial. Credit card required but not charged until trial ends.
           </p>
 
           {/* Billing Toggle */}
@@ -250,7 +250,7 @@ export default function PricingPage() {
             <div>
               <h3 className="text-lg font-semibold mb-2">How does the free trial work?</h3>
               <p className="text-gray-600">
-                You get full access to all features of your chosen plan for 7 days. No credit card required to start.
+                You get full access to all features of your chosen plan for 7 days. Credit card required to start trial, but you won't be charged until the trial period ends.
                 You'll only be charged after the trial ends if you decide to continue.
               </p>
             </div>

@@ -55,7 +55,7 @@ export default function TermsOfService() {
               <h3 className="text-xl font-semibold mt-4 mb-2">4.1 Free Trial</h3>
               <ul className="list-disc pl-6 text-gray-700 space-y-2">
                 <li>New users receive a 7-day free trial</li>
-                <li>No credit card required for trial activation</li>
+                <li>Credit card required for trial activation but not charged during trial period</li>
                 <li>Trial includes access to your selected plan's features with applicable limits</li>
                 <li>Trial automatically ends after 7 days unless converted to a paid subscription</li>
               </ul>
