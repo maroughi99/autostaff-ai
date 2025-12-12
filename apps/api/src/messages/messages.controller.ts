@@ -42,7 +42,15 @@ export class MessagesController {
 
   @Post(':id/approve')
   async approveDraft(@Param('id') id: string) {
-    return this.messagesService.approveDraft(id);
+    console.log('[APPROVE] Approving message:', id);
+    try {
+      const result = await this.messagesService.approveDraft(id);
+      console.log('[APPROVE] Success:', result.id);
+      return result;
+    } catch (error) {
+      console.error('[APPROVE] Failed:', error.message);
+      throw error;
+    }
   }
 
   @Post(':id/reject')

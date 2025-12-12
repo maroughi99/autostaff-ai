@@ -117,6 +117,20 @@ export class MessagesService {
   }
 
   async approveDraft(messageId: string) {
+    console.log('[APPROVE SERVICE] Looking for message:', messageId);
+    
+    // Check if message exists first
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+    });
+    
+    if (!message) {
+      console.error('[APPROVE SERVICE] Message not found:', messageId);
+      throw new Error('Message not found');
+    }
+    
+    console.log('[APPROVE SERVICE] Message found, updating...');
+    
     return this.prisma.message.update({
       where: { id: messageId },
       data: {
