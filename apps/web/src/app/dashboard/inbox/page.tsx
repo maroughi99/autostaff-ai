@@ -114,7 +114,9 @@ export default function InboxPage() {
       });
       
       if (!approveRes.ok) {
-        throw new Error(`Approve failed: ${approveRes.statusText}`);
+        const errorData = await approveRes.json().catch(() => ({ message: approveRes.statusText }));
+        console.error('Approve error response:', errorData);
+        throw new Error(errorData.message || `Approve failed: ${approveRes.statusText}`);
       }
       
       // Send the message
