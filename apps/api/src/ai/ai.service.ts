@@ -560,7 +560,13 @@ Return ONLY a JSON array of pricing items. No explanation, just the array.`;
         temperature: 0.3,
       });
 
-      const items = JSON.parse(response);
+      // Strip markdown code blocks if present
+      let cleanResponse = response.trim();
+      if (cleanResponse.startsWith('```')) {
+        cleanResponse = cleanResponse.replace(/^```json\s*\n?/, '').replace(/\n?```\s*$/, '');
+      }
+
+      const items = JSON.parse(cleanResponse);
       
       // Validate each item
       const validated = items.map((item: any) => {
@@ -577,4 +583,5 @@ Return ONLY a JSON array of pricing items. No explanation, just the array.`;
       this.logger.error('Failed to parse pricing guide:', error);
       throw new Error('AI parsing failed');
     }
-  }}
+  }
+}
