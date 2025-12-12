@@ -205,30 +205,6 @@ export default function InboxPage() {
     }
   };
 
-  const handleDelete = async (messageId: string, event?: React.MouseEvent) => {
-    if (event) {
-      event.stopPropagation();
-    }
-    if (!confirm('Are you sure you want to delete this message?')) return;
-    
-    setProcessing(true);
-    try {
-      await fetch(`${API_URL}/messages/${messageId}`, {
-        method: 'DELETE',
-      });
-      
-      if (selectedMessage?.id === messageId) {
-        setSelectedMessage(null);
-      }
-      loadMessages();
-    } catch (error) {
-      console.error('Failed to delete:', error);
-      alert('Failed to delete message');
-    } finally {
-      setProcessing(false);
-    }
-  };
-
   const getStageColor = (stage: string) => {
     switch (stage) {
       case 'new': return 'bg-blue-100 text-blue-800';

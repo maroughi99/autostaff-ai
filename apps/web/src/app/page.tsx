@@ -78,9 +78,6 @@ export default function Home() {
           </div>
         )}
       </header>
-          </div>
-        </div>
-      </header>
 
       {/* Hero Section */}
       <section className="py-12 md:py-20 lg:py-32">
