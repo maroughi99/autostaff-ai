@@ -1,14 +1,33 @@
+'use client';
+
+import { useState } from 'react';
 import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
 import { Bot, LayoutDashboard, Mail, Users, FileText, Settings, Zap, Calendar, DollarSign, CreditCard, PieChart, Briefcase, Menu, X } from 'lucide-react';
 import { UserSync } from '@/components/UserSync';
 import { SubscriptionGuard } from '@/components/SubscriptionGuard';
+import { Button } from '@/components/ui/button';
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const navItems = [
+    { href: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" />, label: 'Dashboard' },
+    { href: '/dashboard/overview', icon: <PieChart className="h-5 w-5" />, label: 'Overview' },
+    { href: '/dashboard/inbox', icon: <Mail className="h-5 w-5" />, label: 'Inbox' },
+    { href: '/dashboard/leads', icon: <Users className="h-5 w-5" />, label: 'Leads' },
+    { href: '/dashboard/customers', icon: <Briefcase className="h-5 w-5" />, label: 'Customers' },
+    { href: '/dashboard/calendar', icon: <Calendar className="h-5 w-5" />, label: 'Calendar' },
+    { href: '/dashboard/billing', icon: <DollarSign className="h-5 w-5" />, label: 'Billing' },
+    { href: '/dashboard/subscription', icon: <CreditCard className="h-5 w-5" />, label: 'Subscription' },
+    { href: '/dashboard/automation', icon: <Zap className="h-5 w-5" />, label: 'Automation' },
+    { href: '/dashboard/settings', icon: <Settings className="h-5 w-5" />, label: 'Settings' },
+  ];
+
   return (
     <SubscriptionGuard>
       <div className="min-h-screen flex flex-col md:flex-row">
@@ -16,10 +35,20 @@ export default function DashboardLayout({
         
         {/* Mobile Header */}
         <div className="md:hidden bg-white border-b px-4 py-3 flex items-center justify-between sticky top-0 z-50">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <Bot className="h-6 w-6 text-primary" />
-            <span className="text-lg font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">AutoStaff AI</span>
-          </Link>
+          <div className="flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2"
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+            <Link href="/dashboard" className="flex items-center gap-2">
+              <Bot className="h-6 w-6 text-primary" />
+              <span className="text-lg font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">AutoStaff AI</span>
+            </Link>
+          </div>
           <UserButton 
             afterSignOutUrl="/"
             appearance={{
@@ -30,6 +59,27 @@ export default function DashboardLayout({
           />
         </div>
 
+        {/* Mobile Menu Drawer */}
+        {mobileMenuOpen && (
+          <div className="md:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setMobileMenuOpen(false)}>
+            <div className="bg-white w-64 h-full p-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+              <nav className="space-y-2 mt-4">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors text-sm"
+                  >
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </Link>
+                ))}
+              </nav>
+            </div>
+          </div>
+        )}
+
         {/* Sidebar - Hidden on mobile by default */}
         <aside className="hidden md:block w-64 border-r bg-muted/30 sticky top-0 h-screen overflow-y-auto">
           <div className="p-4">
@@ -39,36 +89,11 @@ export default function DashboardLayout({
             </Link>
           
           <nav className="space-y-2">
-            <NavLink href="/dashboard" icon={<LayoutDashboard className="h-5 w-5" />}>
-              Dashboard
-            </NavLink>
-            <NavLink href="/dashboard/overview" icon={<PieChart className="h-5 w-5" />}>
-              Overview
-            </NavLink>
-            <NavLink href="/dashboard/inbox" icon={<Mail className="h-5 w-5" />}>
-              Inbox
-            </NavLink>
-            <NavLink href="/dashboard/leads" icon={<Users className="h-5 w-5" />}>
-              Leads
-            </NavLink>
-            <NavLink href="/dashboard/customers" icon={<Briefcase className="h-5 w-5" />}>
-              Customers
-            </NavLink>
-            <NavLink href="/dashboard/calendar" icon={<Calendar className="h-5 w-5" />}>
-              Calendar
-            </NavLink>
-            <NavLink href="/dashboard/billing" icon={<DollarSign className="h-5 w-5" />}>
-              Billing
-            </NavLink>
-            <NavLink href="/dashboard/subscription" icon={<CreditCard className="h-5 w-5" />}>
-              Subscription
-            </NavLink>
-            <NavLink href="/dashboard/automation" icon={<Zap className="h-5 w-5" />}>
-              Automation
-            </NavLink>
-            <NavLink href="/dashboard/settings" icon={<Settings className="h-5 w-5" />}>
-              Settings
-            </NavLink>
+            {navItems.map((item) => (
+              <NavLink key={item.href} href={item.href} icon={item.icon}>
+                {item.label}
+              </NavLink>
+            ))}
           </nav>
         </div>
       </aside>

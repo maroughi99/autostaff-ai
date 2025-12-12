@@ -1,15 +1,20 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Bot, Mail, Calendar, MessageSquare, Zap, CheckCircle } from 'lucide-react';
+import { Bot, Mail, Calendar, MessageSquare, Zap, CheckCircle, Menu, X } from 'lucide-react';
 import Footer from '@/components/Footer';
 import HomeRedirect from '@/components/HomeRedirect';
 
 export default function Home() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <div className="min-h-screen">
       <HomeRedirect />
       {/* Header */}
-      <header className="border-b">
+      <header className="border-b sticky top-0 bg-white z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
             <Bot className="h-6 w-6 md:h-8 md:w-8 text-primary" />
@@ -30,9 +35,49 @@ export default function Home() {
             </Button>
           </nav>
           <div className="md:hidden flex items-center gap-2">
-            <Button size="sm" asChild>
-              <Link href="/sign-up">Sign Up</Link>
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2"
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
+          </div>
+        </div>
+        
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t bg-white">
+            <nav className="container mx-auto px-4 py-4 flex flex-col gap-3">
+              <Link 
+                href="#features" 
+                className="text-sm font-medium hover:text-primary py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Features
+              </Link>
+              <Link 
+                href="#pricing" 
+                className="text-sm font-medium hover:text-primary py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Pricing
+              </Link>
+              <Link 
+                href="/sign-in" 
+                className="text-sm font-medium hover:text-primary py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Sign In
+              </Link>
+              <Button asChild className="w-full">
+                <Link href="/sign-up">Get Started</Link>
+              </Button>
+            </nav>
+          </div>
+        )}
+      </header>
           </div>
         </div>
       </header>
