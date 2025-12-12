@@ -63,8 +63,16 @@ export default function AutomationPage() {
   const [sendBookingReminders, setSendBookingReminders] = useState(true);
   const [reminderHoursBefore, setReminderHoursBefore] = useState(24);
 
+  // Pricing Guide
+  const [usePricingGuide, setUsePricingGuide] = useState(false);
+  const [uploadingPricing, setUploadingPricing] = useState(false);
+  const [pricingItems, setPricingItems] = useState<any[]>([]);
+  const [showPricingItems, setShowPricingItems] = useState(false);
+
   useEffect(() => {
     loadAutomationSettings();
+    loadPricingSettings();
+    loadPricingItems();
   }, [user?.id]);
 
   const loadAutomationSettings = async () => {
@@ -203,6 +211,106 @@ export default function AutomationPage() {
       toast.error('Failed to save settings. Please try again.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePricingGuideUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.id) return;
+
+    setUploadingPricing(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('userId', user.id);
+
+      const response = await fetch(`${API_URL}/pricing/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast.success(`🎉 Parsed ${result.itemsCreated} pricing items!`);
+        if (result.needsReview > 0) {
+          toast.warning(`⚠️ ${result.needsReview} items need review`);
+        }
+        loadPricingItems();
+      } else {
+        throw new Error('Upload failed');
+      }
+    } catch (error) {
+      console.error('Failed to upload pricing guide:', error);
+      toast.error('Failed to upload pricing guide');
+    } finally {
+      setUploadingPricing(false);
+      e.target.value = '';
+    }
+  };
+
+  const loadPricingItems = async () => {
+    if (!user?.id) return;
+
+    try {
+      const response = await fetch(`${API_URL}/pricing?userId=${user.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setPricingItems(data.items || []);
+      }
+    } catch (error) {
+      console.error('Failed to load pricing items:', error);
+    }
+  };
+
+  const loadPricingSettings = async () => {
+    if (!user?.id) return;
+
+    try {
+      const response = await fetch(`${API_URL}/pricing/settings?userId=${user.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setUsePricingGuide(data.usePricingGuide || false);
+      }
+    } catch (error) {
+      console.error('Failed to load pricing settings:', error);
+    }
+  };
+
+  const togglePricingGuide = async (enabled: boolean) => {
+    if (!user?.id) return;
+
+    try {
+      const response = await fetch(`${API_URL}/pricing/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, usePricingGuide: enabled }),
+      });
+
+      if (response.ok) {
+        setUsePricingGuide(enabled);
+        toast.success(enabled ? 'Pricing guide enabled ✅' : 'Pricing guide disabled');
+      }
+    } catch (error) {
+      console.error('Failed to toggle pricing guide:', error);
+      toast.error('Failed to update settings');
+    }
+  };
+
+  const deletePricingItem = async (itemId: string) => {
+    if (!user?.id) return;
+
+    try {
+      const response = await fetch(`${API_URL}/pricing/${itemId}?userId=${user.id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        toast.success('Item deleted');
+        loadPricingItems();
+      }
+    } catch (error) {
+      console.error('Failed to delete item:', error);
+      toast.error('Failed to delete item');
     }
   };
 
@@ -591,6 +699,111 @@ export default function AutomationPage() {
                 onChange={setIncludeTermsInQuotes}
               />
             </>
+          )}
+        </div>
+      </Card>
+
+      {/* Pricing Guide Section */}
+      <Card className="p-4 sm:p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <DollarSign className="h-5 w-5 text-primary" />
+          <h2 className="text-lg sm:text-xl font-semibold">Pricing Guide</h2>
+        </div>
+        <div className="space-y-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm text-blue-900 mb-2">
+              Upload your pricing list and AI will use it to generate accurate quotes based on your actual prices.
+            </p>
+            <p className="text-xs text-blue-700">
+              Supported formats: PDF, CSV, Excel, Text - AI will parse any format automatically
+            </p>
+          </div>
+
+          <SettingToggle
+            label="Use Pricing Guide for Quotes"
+            description="Enable AI to reference your uploaded pricing when generating quotes"
+            checked={usePricingGuide}
+            onChange={togglePricingGuide}
+          />
+
+          <div>
+            <label htmlFor="pricing-upload" className="block text-sm font-medium mb-2">
+              Upload Pricing Guide
+            </label>
+            <input
+              id="pricing-upload"
+              type="file"
+              accept=".pdf,.csv,.xls,.xlsx,.txt"
+              onChange={handlePricingGuideUpload}
+              disabled={uploadingPricing}
+              className="block w-full text-sm text-gray-500
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-md file:border-0
+                file:text-sm file:font-semibold
+                file:bg-primary file:text-white
+                hover:file:bg-primary/90
+                file:cursor-pointer cursor-pointer
+                disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+            {uploadingPricing && (
+              <p className="text-sm text-muted-foreground mt-2">
+                ⏳ Parsing pricing guide with AI...
+              </p>
+            )}
+          </div>
+
+          {pricingItems.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium">
+                  {pricingItems.length} pricing items loaded
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowPricingItems(!showPricingItems)}
+                >
+                  {showPricingItems ? 'Hide' : 'Show'} Items
+                </Button>
+              </div>
+
+              {showPricingItems && (
+                <div className="border rounded-lg max-h-96 overflow-y-auto">
+                  <div className="divide-y">
+                    {pricingItems.map((item) => (
+                      <div key={item.id} className="p-3 hover:bg-gray-50">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-medium text-sm">{item.name}</h4>
+                              {item.needsReview && (
+                                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded">
+                                  Needs Review
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-600 mt-1">
+                              {item.category}{item.subcategory ? ` / ${item.subcategory}` : ''}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              ${(item.pricing as any).price} per {(item.pricing as any).unit}
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deletePricingItem(item.id)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </Card>
