@@ -48,17 +48,37 @@ export class AuthController {
   async syncUser(@Body() body: { clerkId: string; email: string; name?: string }) {
     const { clerkId, email, name } = body;
 
-    // Check if user exists
-    const existingUser = await this.prisma.user.findUnique({
+    // Check if user exists by clerkId
+    const existingUserByClerkId = await this.prisma.user.findUnique({
       where: { clerkId },
-      select: { id: true, subscriptionPlan: true, aiConversationsLimit: true },
+      select: { id: true, subscriptionPlan: true, aiConversationsLimit: true, email: true },
     });
 
+    // Check if a user with this email already exists (from different Clerk instance)
+    const existingUserByEmail = await this.prisma.user.findFirst({
+      where: { 
+        email: email.toLowerCase().trim(),
+        clerkId: { not: clerkId }, // Different clerkId
+      },
+    });
+
+    // If user exists by email but different clerkId, update their clerkId
+    if (existingUserByEmail && !existingUserByClerkId) {
+      const user = await this.prisma.user.update({
+        where: { id: existingUserByEmail.id },
+        data: { 
+          clerkId,
+          name: name || existingUserByEmail.name,
+        },
+      });
+      return { success: true, user };
+    }
+
     // Prepare update/create data
-    const userData: any = { email, name };
+    const userData: any = { email: email.toLowerCase().trim(), name };
 
     // For new users, set default starter limit
-    if (!existingUser) {
+    if (!existingUserByClerkId) {
       userData.aiConversationsLimit = 50;
       userData.subscriptionPlan = 'starter';
       userData.subscriptionStatus = 'trial';
@@ -70,7 +90,7 @@ export class AuthController {
     } else {
       // For existing users, ensure they have proper limits set based on their plan
       let correctLimit: number | null = null;
-      const plan = existingUser.subscriptionPlan?.toLowerCase();
+      const plan = existingUserByClerkId.subscriptionPlan?.toLowerCase();
       
       if (plan === 'starter') {
         correctLimit = 50;
@@ -84,7 +104,7 @@ export class AuthController {
       }
 
       // Only update if limit is incorrect
-      if (existingUser.aiConversationsLimit !== correctLimit) {
+      if (existingUserByClerkId.aiConversationsLimit !== correctLimit) {
         userData.aiConversationsLimit = correctLimit;
       }
     }
