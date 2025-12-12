@@ -28,7 +28,7 @@ export class AiController {
 
   @Post('generate-quote')
   async generateQuote(@Body() data: { prompt: string; businessType?: string; conversationHistory?: any[]; userId?: string }) {
-    const result = await this.aiService.generateQuote(data.prompt, data.businessType, data.conversationHistory);
+    const result = await this.aiService.generateQuote(data.prompt, data.businessType, data.conversationHistory, data.userId);
     
     // Track AI usage if userId is provided
     if (data.userId) {

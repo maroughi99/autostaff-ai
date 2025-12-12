@@ -412,12 +412,62 @@ ${conversationHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n\n')}
     return Math.max(0.2, Math.min(0.95, confidence));
   }
 
-  async generateQuote(prompt: string, businessType?: string, conversationHistory?: any[]): Promise<any> {
+  async generateQuote(prompt: string, businessType?: string, conversationHistory?: any[], userId?: string): Promise<any> {
     const conversationContext = conversationHistory && conversationHistory.length > 0
       ? `\n\nRecent conversation with customer:\n${conversationHistory.map(msg => 
           `${msg.direction === 'inbound' ? 'Customer' : 'You'}: ${msg.content}`
         ).join('\n')}`
       : '';
+
+    // Check if user has pricing guide enabled and fetch items
+    let pricingContext = '';
+    if (userId) {
+      try {
+        const user = await this.prisma.user.findFirst({
+          where: {
+            OR: [
+              { id: userId },
+              { clerkId: userId }
+            ]
+          },
+          select: {
+            id: true,
+            usePricingGuide: true
+          }
+        });
+
+        if (user && user.usePricingGuide) {
+          const pricingItems = await this.prisma.pricingItem.findMany({
+            where: {
+              userId: user.id,
+              isActive: true
+            },
+            orderBy: {
+              category: 'asc'
+            }
+          });
+
+          if (pricingItems.length > 0) {
+            pricingContext = `\n\n## COMPANY PRICING GUIDE\nUse these approved prices when generating the quote. Match services to the pricing items below:\n\n`;
+            
+            pricingItems.forEach((item: any) => {
+              const pricing = item.pricing || {};
+              pricingContext += `• ${item.name} (${item.category}):\n`;
+              pricingContext += `  Price: $${pricing.price} ${pricing.currency || 'CAD'} per ${pricing.unit || 'unit'}\n`;
+              if (pricing.model === 'hourly') pricingContext += `  Pricing Model: Hourly rate\n`;
+              if (pricing.minimum_charge > 0) pricingContext += `  Minimum Charge: $${pricing.minimum_charge}\n`;
+              if (item.description) pricingContext += `  Details: ${item.description}\n`;
+              pricingContext += '\n';
+            });
+
+            pricingContext += `When quoting services that match these items, use these exact prices. For services not in the guide, estimate based on industry standards.\n`;
+          }
+        }
+      } catch (error) {
+        this.logger.warn('Failed to fetch pricing guide for quote generation:', error);
+        // Continue without pricing guide if there's an error
+      }
+    }
 
     const systemPrompt = `You are an expert ${businessType || 'contractor'} estimator. Generate a detailed, professional quote based on the customer's request.
 
@@ -429,8 +479,8 @@ Guidelines:
 - Round prices to reasonable amounts
 - Add a professional title and description
 - Tax rate is always 13%
-- Consider standard industry markup (20-40% on materials, hourly rates for labor)
-
+- Consider standard industry markup (20-40% on materials, hourly rates for labor)${pricingContext ? '\n- **IMPORTANT: When services match items in the Pricing Guide below, use those exact prices**' : ''}
+${pricingContext}
 Return ONLY valid JSON in this exact format:
 {
   "title": "Project title",
