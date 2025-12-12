@@ -94,8 +94,23 @@ export class AiController {
     }
 
     try {
+      // Find user by Clerk ID or database ID
+      const user = await this.prisma.user.findFirst({
+        where: {
+          OR: [
+            { id: userId },
+            { clerkId: userId },
+          ],
+        },
+      });
+
+      if (!user) {
+        this.logger.error(`User not found: ${userId}`);
+        return { error: 'User not found' };
+      }
+
       await this.prisma.user.update({
-        where: { id: userId },
+        where: { id: user.id },
         data: {
           aiAutoApprove: settings.aiAutoApprove,
           automationSettings: JSON.stringify(settings),
@@ -105,7 +120,7 @@ export class AiController {
       this.logger.log(`💾 Automation settings saved for user ${userId}`);
       return { success: true };
     } catch (error) {
-      this.logger.error('Failed to save automation settings:', error);
+      this.logger.error('Failed to save automation settings:', error.message);
       return { error: 'Failed to save settings' };
     }
   }
