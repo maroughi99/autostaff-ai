@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class AiService {
@@ -10,7 +11,7 @@ export class AiService {
   private preferredProvider: 'claude' | 'openai' = 'claude';
   private calendarService: any; // Will be injected
 
-  constructor() {
+  constructor(private prisma: PrismaService) {
     this.openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     });
