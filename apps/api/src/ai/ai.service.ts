@@ -497,4 +497,84 @@ Return ONLY valid JSON in this exact format:
       };
     }
   }
+
+  async parsePricingGuide(fileContent: string, filename: string): Promise<any[]> {
+    this.logger.log(`🔍 Parsing pricing guide: ${filename}`);
+
+    const prompt = `You are a pricing data extraction expert. Parse the following pricing guide into structured pricing items.
+
+Convert ALL pricing information into this exact JSON schema per item:
+
+{
+  "name": "Service/Product Name",
+  "category": "Main Category",
+  "subcategory": "Subcategory (optional)",
+  "description": "Detailed description",
+  "pricing": {
+    "model": "per_unit | flat_rate | hourly | per_sqft",
+    "unit": "each | sqft | hour | project",
+    "price": 0.00,
+    "currency": "CAD",
+    "minimum_quantity": 0,
+    "minimum_charge": 0.00
+  },
+  "adjustments": {
+    "difficulty": { "easy": 1.0, "standard": 1.15, "difficult": 1.35 },
+    "height": { "0-6ft": 1.0, "6-12ft": 1.2, "12-20ft": 1.4 }
+  },
+  "costBreakdown": {
+    "labor": { "hours_per_unit": 0.0, "rate": 0.00 },
+    "materials": { "cost_per_unit": 0.00 }
+  },
+  "aiHints": {
+    "keywords": ["keyword1", "keyword2"],
+    "use_when": ["condition1", "condition2"],
+    "confidence_threshold": 0.7
+  },
+  "rules": {
+    "requires_site_visit": false,
+    "exclusions": ["what's not included"],
+    "notes": "special instructions"
+  },
+  "aiConfidence": 0.85
 }
+
+CRITICAL RULES:
+1. Extract ALL pricing items found in the document
+2. If data is missing, infer reasonable defaults
+3. Set aiConfidence between 0.0-1.0 based on data clarity
+4. If price range (e.g. "$15-25"), use the average and note in rules
+5. Extract keywords from context for aiHints
+6. pricing.model MUST be one of: per_unit, flat_rate, hourly, per_sqft
+7. All numeric values must be numbers, not strings
+
+PRICING GUIDE CONTENT:
+${fileContent}
+
+Return ONLY a JSON array of pricing items. No explanation, just the array.`;
+
+    try {
+      const response = await this.callAI({
+        userPrompt: prompt,
+        jsonMode: true,
+        temperature: 0.3,
+      });
+
+      const items = JSON.parse(response);
+      
+      // Validate each item
+      const validated = items.map((item: any) => {
+        if (!item.pricing?.model || !item.name || !item.category) {
+          item.aiConfidence = Math.max(0.3, item.aiConfidence || 0.5);
+        }
+        return item;
+      });
+
+      this.logger.log(`✅ Successfully parsed ${validated.length} pricing items`);
+      return validated;
+
+    } catch (error) {
+      this.logger.error('Failed to parse pricing guide:', error);
+      throw new Error('AI parsing failed');
+    }
+  }

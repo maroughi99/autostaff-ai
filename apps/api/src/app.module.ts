@@ -17,6 +17,7 @@ import { StripeModule } from './stripe/stripe.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { CustomersModule } from './customers/customers.module';
 import { JobsModule } from './jobs/jobs.module';
+import { PricingModule } from './pricing/pricing.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { JobsModule } from './jobs/jobs.module';
     DashboardModule,
     CustomersModule,
     JobsModule,
+    PricingModule,
   ],
   controllers: [AppController],
   providers: [AppService],
