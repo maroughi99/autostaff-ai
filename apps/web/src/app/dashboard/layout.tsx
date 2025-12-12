@@ -30,7 +30,7 @@ export default function DashboardLayout({
   ];
 
   const { user } = useUser();
-  const adminEmails = ['tonymaroughi@gmail.com', 'sarkon.shlemoon@gmail.com', 'sarkonshlemoon@gmail.com'];
+  const adminEmails = ['tonymaroughi@gmail.com', 'sarkon.shlemoon@gmail.com', 'sarkonshlemoon@gmail.com', 'gtaconcretemasonryinc@gmail.com'];
   const isAdmin = user?.primaryEmailAddress?.emailAddress && 
     adminEmails.includes(user.primaryEmailAddress.emailAddress.toLowerCase());
 

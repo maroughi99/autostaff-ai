@@ -14,7 +14,7 @@ export default function AdminPage() {
   const [leads, setLeads] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('stats');
 
-  const adminEmails = ['tonymaroughi@gmail.com', 'sarkon.shlemoon@gmail.com', 'sarkonshlemoon@gmail.com'];
+  const adminEmails = ['tonymaroughi@gmail.com', 'sarkon.shlemoon@gmail.com', 'sarkonshlemoon@gmail.com', 'gtaconcretemasonryinc@gmail.com'];
   const isAdmin = user?.primaryEmailAddress?.emailAddress && 
     adminEmails.includes(user.primaryEmailAddress.emailAddress.toLowerCase());
 

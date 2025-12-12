@@ -6,7 +6,7 @@ export class AdminDataController {
   constructor(private prisma: PrismaService) {}
 
   private isAdmin(email: string): boolean {
-    const adminEmails = ['tonymaroughi@gmail.com', 'sarkon.shlemoon@gmail.com', 'sarkonshlemoon@gmail.com'];
+    const adminEmails = ['tonymaroughi@gmail.com', 'sarkon.shlemoon@gmail.com', 'sarkonshlemoon@gmail.com', 'gtaconcretemasonryinc@gmail.com'];
     return adminEmails.includes(email?.toLowerCase());
   }
 

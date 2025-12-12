@@ -34,7 +34,7 @@ export function SubscriptionGuard({ children }: { children: React.ReactNode }) {
       }
 
       // Admin bypass - grant full access
-      const adminEmails = ['sarkon.shlemoon@gmail.com', 'sarkonshlemoon@gmail.com', 'tonymaroughi@gmail.com'];
+      const adminEmails = ['sarkon.shlemoon@gmail.com', 'sarkonshlemoon@gmail.com', 'tonymaroughi@gmail.com', 'gtaconcretemasonryinc@gmail.com'];
       const userEmail = user.primaryEmailAddress?.emailAddress?.toLowerCase();
       if (userEmail && adminEmails.includes(userEmail)) {
         setHasAccess(true);
