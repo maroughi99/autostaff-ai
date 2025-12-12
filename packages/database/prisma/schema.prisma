@@ -51,10 +51,12 @@ model User {
   aiConversationsLimit Int?    // null = unlimited (ultimate plan)
   lastResetAt         DateTime @default(now())
   automationSettings  String?  @db.Text // JSON string for automation configuration
+  usePricingGuide     Boolean  @default(false) // Toggle to use uploaded pricing guide for quotes
   
   leads            Lead[]
   emailAccounts    EmailAccount[]
   pricingTemplates PricingTemplate[]
+  pricingItems     PricingItem[]
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -474,4 +476,41 @@ model Payment {
   @@index([leadId])
   @@index([paymentDate])
   @@map("payments")
+}
+
+model PricingItem {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Core info
+  name        String
+  category    String
+  subcategory String?
+  description String?  @db.Text
+  
+  // Structured pricing data (JSONB)
+  pricing         Json  // { model, unit, price, currency, minimum_quantity, minimum_charge }
+  adjustments     Json? // { difficulty, height, seasonal, etc. }
+  costBreakdown   Json? // { labor, materials }
+  aiHints         Json? // { keywords, use_when, confidence_threshold }
+  rules           Json? // { requires_site_visit, exclusions, notes }
+  
+  // AI parsing metadata
+  aiConfidence    Float?   @default(1.0)  // 0.0 - 1.0
+  needsReview     Boolean  @default(false)
+  sourceFile      String?  // Original filename
+  parsedFrom      String?  // "pdf", "excel", "csv", "manual"
+  
+  // Versioning
+  version         Int      @default(1)
+  isActive        Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([category])
+  @@index([isActive])
+  @@map("pricing_items")
 }
