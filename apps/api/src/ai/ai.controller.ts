@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Logger } from '@nestjs/common';
+import { Controller, Post, Get, Body, Query, Logger } from '@nestjs/common';
 import { AiService } from './ai.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -52,4 +52,62 @@ export class AiController {
     
     return result;
   }
+
+  @Get('automation-settings')
+  async getAutomationSettings(@Query('userId') userId: string) {
+    if (!userId) {
+      return { error: 'userId is required' };
+    }
+
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          aiAutoApprove: true,
+          automationSettings: true,
+        },
+      });
+
+      if (!user) {
+        return { error: 'User not found' };
+      }
+
+      // Parse automation settings if they exist
+      const settings = user.automationSettings ? JSON.parse(user.automationSettings as string) : {};
+
+      return {
+        aiAutoApprove: user.aiAutoApprove,
+        ...settings,
+      };
+    } catch (error) {
+      this.logger.error('Failed to get automation settings:', error);
+      return { error: 'Failed to load settings' };
+    }
+  }
+
+  @Post('automation-settings')
+  async saveAutomationSettings(@Body() data: any) {
+    const { userId, ...settings } = data;
+
+    if (!userId) {
+      return { error: 'userId is required' };
+    }
+
+    try {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          aiAutoApprove: settings.aiAutoApprove,
+          automationSettings: JSON.stringify(settings),
+        },
+      });
+
+      this.logger.log(`💾 Automation settings saved for user ${userId}`);
+      return { success: true };
+    } catch (error) {
+      this.logger.error('Failed to save automation settings:', error);
+      return { error: 'Failed to save settings' };
+    }
+  }
 }
+
