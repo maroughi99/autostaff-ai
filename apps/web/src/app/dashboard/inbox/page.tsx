@@ -109,7 +109,7 @@ export default function InboxPage() {
     setProcessing(true);
     try {
       // Approve the draft
-      const approveRes = await fetch(`${API_URL}/messages/${selectedMessage.id}/approve`, {
+      const approveRes = await fetch(`${API_URL}/messages/${selectedMessage.id}/approve?userId=${user.id}`, {
         method: 'POST',
       });
       
@@ -120,7 +120,7 @@ export default function InboxPage() {
       }
       
       // Send the message
-      const sendRes = await fetch(`${API_URL}/messages/${selectedMessage.id}/send`, {
+      const sendRes = await fetch(`${API_URL}/messages/${selectedMessage.id}/send?userId=${user.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userClerkId: user.id }),
