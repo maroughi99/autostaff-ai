@@ -42,10 +42,13 @@ export default function AdminPage() {
       ]);
 
       setStats(statsData);
-      setUsers(usersData.users || []);
-      setLeads(leadsData.leads || []);
+      setUsers(Array.isArray(usersData.users) ? usersData.users : []);
+      setLeads(Array.isArray(leadsData.leads) ? leadsData.leads : []);
     } catch (error) {
       console.error('Failed to load admin data:', error);
+      setStats(null);
+      setUsers([]);
+      setLeads([]);
     } finally {
       setLoading(false);
     }
