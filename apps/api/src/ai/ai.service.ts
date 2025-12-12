@@ -540,18 +540,20 @@ Convert ALL pricing information into this exact JSON schema per item:
 }
 
 CRITICAL RULES:
-1. Extract ALL pricing items found in the document
-2. If data is missing, infer reasonable defaults
-3. Set aiConfidence between 0.0-1.0 based on data clarity
-4. If price range (e.g. "$15-25"), use the average and note in rules
-5. Extract keywords from context for aiHints
-6. pricing.model MUST be one of: per_unit, flat_rate, hourly, per_sqft
-7. All numeric values must be numbers, not strings
+1. Extract ONLY the most important pricing items (max 15-20 items)
+2. Group similar services together
+3. If data is missing, infer reasonable defaults
+4. Set aiConfidence between 0.0-1.0 based on data clarity
+5. If price range (e.g. "$15-25"), use the average and note in rules
+6. Keep descriptions concise (under 100 chars)
+7. pricing.model MUST be one of: per_unit, flat_rate, hourly, per_sqft
+8. All numeric values must be numbers, not strings
+9. KEEP JSON COMPACT - no unnecessary fields
 
-PRICING GUIDE CONTENT:
-${fileContent}
+PRICING GUIDE CONTENT (extract main services only):
+${fileContent.substring(0, 3000)}
 
-Return ONLY a JSON array of pricing items. No explanation, just the array.`;
+Return ONLY a compact JSON array. No markdown, no explanation.`;
 
     try {
       const response = await this.callAI({
@@ -569,23 +571,7 @@ Return ONLY a JSON array of pricing items. No explanation, just the array.`;
       // Log the cleaned response for debugging
       this.logger.debug(`Cleaned AI response length: ${cleanResponse.length} chars`);
 
-      let items;
-      try {
-        items = JSON.parse(cleanResponse);
-      } catch (parseError) {
-        this.logger.error('JSON parse error:', parseError.message);
-        this.logger.error('Response snippet:', cleanResponse.substring(0, 500));
-        
-        // Try to fix common JSON issues
-        cleanResponse = cleanResponse
-          .replace(/\\n/g, ' ')  // Replace literal \n with space
-          .replace(/\n/g, ' ')   // Replace actual newlines with space
-          .replace(/\r/g, '')    // Remove carriage returns
-          .replace(/\t/g, ' ')   // Replace tabs with space
-          .replace(/  +/g, ' '); // Replace multiple spaces with single space
-        
-        items = JSON.parse(cleanResponse);
-      }
+      const items = JSON.parse(cleanResponse);
       
       // Validate each item
       const validated = items.map((item: any) => {
@@ -600,7 +586,8 @@ Return ONLY a JSON array of pricing items. No explanation, just the array.`;
 
     } catch (error) {
       this.logger.error('Failed to parse pricing guide:', error.message);
-      throw new Error('AI parsing failed');
+      this.logger.error('This might be due to the pricing guide being too large. Try a smaller file.');
+      throw new Error('AI parsing failed - file may be too large');
     }
   }
 }
