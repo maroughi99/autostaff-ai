@@ -316,11 +316,11 @@ export default function SubscriptionPage() {
                 {invoices.map((invoice) => (
                   <div
                     key={invoice.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border rounded-lg hover:bg-gray-50"
                   >
                     <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <p className="font-medium">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <p className="font-medium break-all">
                           {invoice.number || 'Invoice'}
                         </p>
                         <Badge variant={invoice.status === 'paid' ? 'default' : 'destructive'}>
@@ -335,8 +335,8 @@ export default function SubscriptionPage() {
                         })}
                       </p>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <p className="font-semibold">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                      <p className="font-semibold whitespace-nowrap">
                         ${invoice.amount.toFixed(2)} {invoice.currency}
                       </p>
                       {invoice.pdfUrl && (
@@ -344,6 +344,7 @@ export default function SubscriptionPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => window.open(invoice.pdfUrl, '_blank')}
+                          className="w-full sm:w-auto"
                         >
                           Download PDF
                         </Button>

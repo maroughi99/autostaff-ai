@@ -117,18 +117,18 @@ export default function OverviewPage() {
             <div className="text-sm text-gray-500 mt-1">
               CA${((stats?.yearSales?.total || 0) / 12).toLocaleString('en-US', { minimumFractionDigits: 2 })} monthly average
             </div>
-            <div className="flex items-end justify-between gap-2 h-48">
+            <div className="flex items-end justify-between gap-1 sm:gap-2 h-48">
               {stats?.yearSales?.monthly?.map((month) => {
                 const maxAmount = Math.max(...(stats?.yearSales?.monthly?.map(m => m.amount) || [1]));
                 const height = maxAmount > 0 ? (month.amount / maxAmount) * 100 : 0;
                 return (
-                  <div key={month.month} className="flex-1 flex flex-col items-center">
+                  <div key={month.month} className="flex-1 flex flex-col items-center min-w-0">
                     <div 
                       className="w-full bg-blue-500 rounded-t hover:bg-blue-600 transition-colors"
                       style={{ height: `${height}%`, minHeight: height > 0 ? '8px' : '0' }}
                       title={`${month.month}: CA$${month.amount.toFixed(2)}`}
                     />
-                    <div className="text-xs text-gray-500 mt-2">{month.month}</div>
+                    <div className="text-[8px] sm:text-xs text-gray-500 mt-1 sm:mt-2 truncate w-full text-center">{month.month}</div>
                   </div>
                 );
               })}

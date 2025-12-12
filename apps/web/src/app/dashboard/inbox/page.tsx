@@ -248,9 +248,9 @@ export default function InboxPage() {
   }
 
   return (
-    <div className="h-full flex">
+    <div className="h-full flex flex-col md:flex-row">
       {/* Message List */}
-      <div className="w-96 border-r bg-muted/30 flex flex-col">
+      <div className="w-full md:w-96 border-r bg-muted/30 flex flex-col">
         {/* Header */}
         <div className="p-4 border-b bg-background">
           <div className="flex items-center gap-2 mb-4">
@@ -262,12 +262,12 @@ export default function InboxPage() {
           </div>
 
           {/* Filters */}
-          <div className="flex gap-2">
+          <div className="flex gap-1 sm:gap-2">
             <Button
               size="sm"
               variant={filter === 'all' ? 'default' : 'outline'}
               onClick={() => setFilter('all')}
-              className="flex-1"
+              className="flex-1 text-xs sm:text-sm"
             >
               All
             </Button>
@@ -275,7 +275,7 @@ export default function InboxPage() {
               size="sm"
               variant={filter === 'unread' ? 'default' : 'outline'}
               onClick={() => setFilter('unread')}
-              className="flex-1"
+              className="flex-1 text-xs sm:text-sm"
             >
               Unread
             </Button>
@@ -283,10 +283,10 @@ export default function InboxPage() {
               size="sm"
               variant={filter === 'leads' ? 'default' : 'outline'}
               onClick={() => setFilter('leads')}
-              className="flex-1"
+              className="flex-1 text-xs sm:text-sm"
             >
-              <Star className="h-4 w-4 mr-1" />
-              Leads
+              <Star className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Leads</span>
             </Button>
           </div>
         </div>

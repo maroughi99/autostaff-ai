@@ -287,12 +287,13 @@ export default function BillingPage() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 overflow-x-auto pb-2">
         {['all', 'draft', 'sent', 'partial', 'paid', 'overdue'].map((status) => (
           <Button
             key={status}
             variant={filter === status ? 'default' : 'outline'}
             onClick={() => setFilter(status)}
+            className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
           >
             {status.charAt(0).toUpperCase() + status.slice(1)}
           </Button>
