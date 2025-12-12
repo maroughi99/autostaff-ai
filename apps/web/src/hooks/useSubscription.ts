@@ -10,6 +10,11 @@ export function useSubscription() {
   const [subscription, setSubscription] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  // Admin emails with full access
+  const adminEmails = ['tonymaroughi@gmail.com', 'sarkon.shlemoon@gmail.com', 'sarkonshlemoon@gmail.com', 'gtaconcretemasonryinc@gmail.com'];
+  const isAdmin = user?.primaryEmailAddress?.emailAddress && 
+    adminEmails.includes(user.primaryEmailAddress.emailAddress.toLowerCase());
+
   useEffect(() => {
     const fetchSubscription = async () => {
       if (!user?.id) {
@@ -33,17 +38,20 @@ export function useSubscription() {
     fetchSubscription();
   }, [user]);
 
-  const hasActiveSubscription = subscription?.stripeSubscriptionId && 
-    subscription?.subscriptionStatus !== 'cancelled';
+  // Admin users always have active subscription with ultimate plan
+  const hasActiveSubscription = isAdmin || (
+    subscription?.subscriptionStatus === 'active' || 
+    subscription?.subscriptionStatus === 'trial'
+  );
 
-  const plan = hasActiveSubscription ? subscription?.subscriptionPlan : null;
+  const plan = isAdmin ? 'ultimate' : (hasActiveSubscription ? subscription?.subscriptionPlan : null);
 
   return {
     subscription,
     loading,
     hasActiveSubscription,
     plan: plan as SubscriptionPlan | null,
-    hasFeature: (feature: string) => hasFeatureAccess(plan, feature),
-    aiConversationLimit: getAIConversationLimit(plan),
+    hasFeature: (feature: string) => isAdmin ? true : hasFeatureAccess(plan, feature),
+    aiConversationLimit: isAdmin ? null : getAIConversationLimit(plan),
   };
 }
