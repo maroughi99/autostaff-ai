@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
-import { Bot, LayoutDashboard, Mail, Users, FileText, Settings, Zap, Calendar, DollarSign, CreditCard, PieChart, Briefcase, Menu, X } from 'lucide-react';
+import { Bot, LayoutDashboard, Mail, Users, FileText, Settings, Zap, Calendar, DollarSign, CreditCard, PieChart, Briefcase, Menu, X, Shield } from 'lucide-react';
 import { UserSync } from '@/components/UserSync';
 import { SubscriptionGuard } from '@/components/SubscriptionGuard';
 import { Button } from '@/components/ui/button';
+import { useUser } from '@clerk/nextjs';
 
 export default function DashboardLayout({
   children,
@@ -27,6 +28,16 @@ export default function DashboardLayout({
     { href: '/dashboard/automation', icon: <Zap className="h-5 w-5" />, label: 'Automation' },
     { href: '/dashboard/settings', icon: <Settings className="h-5 w-5" />, label: 'Settings' },
   ];
+
+  const { user } = useUser();
+  const adminEmails = ['tonymaroughi@gmail.com', 'sarkon.shlemoon@gmail.com', 'sarkonshlemoon@gmail.com'];
+  const isAdmin = user?.primaryEmailAddress?.emailAddress && 
+    adminEmails.includes(user.primaryEmailAddress.emailAddress.toLowerCase());
+
+  // Add admin link for admin users
+  if (isAdmin) {
+    navItems.push({ href: '/dashboard/admin', icon: <Shield className="h-5 w-5" />, label: 'Admin' });
+  }
 
   return (
     <SubscriptionGuard>
