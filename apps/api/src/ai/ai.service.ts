@@ -222,22 +222,66 @@ Only include fields that are clearly present in the message. Return empty object
   }> {
     const { inboundMessage, subject, leadInfo, businessContext, conversationHistory = [], userId, availableSlots } = params;
 
+    // Fetch user's automation settings for response customization
+    let userSettings: any = {};
+    if (userId) {
+      try {
+        const user: any = await this.prisma.user.findFirst({
+          where: {
+            OR: [
+              { clerkId: userId },
+              { id: userId },
+            ],
+          },
+        });
+        
+        if (user?.automationSettings) {
+          userSettings = JSON.parse(user.automationSettings);
+          this.logger.debug(`Loaded automation settings for tone: ${userSettings.responseTone}, length: ${userSettings.responseLength}`);
+        }
+      } catch (error) {
+        this.logger.warn(`Could not load user settings: ${error.message}`);
+      }
+    }
+
+    // Map tone to style instructions
+    const toneInstructions = {
+      professional: 'Use a professional and formal tone. Be respectful and businesslike.',
+      friendly: 'Use a warm, friendly, and approachable tone. Be conversational but professional.',
+      casual: 'Use a casual, relaxed tone. Be personable and down-to-earth.',
+      enthusiastic: 'Use an enthusiastic and energetic tone. Show excitement about helping them.',
+    };
+    
+    // Map length to word count guidance
+    const lengthInstructions = {
+      short: 'Keep your response brief and to the point (1-2 sentences).',
+      medium: 'Keep your response conversational and natural (2-4 sentences).',
+      long: 'Provide a detailed, thorough response (4-6 sentences).',
+    };
+
+    const tone = userSettings.responseTone || 'professional';
+    const length = userSettings.responseLength || 'medium';
+    const customInstructions = userSettings.customInstructions || '';
+    const includeSignature = userSettings.includeSignature !== false; // Default true
+    const signature = userSettings.signature || `Best regards,\n${businessContext?.name || 'AutoStaff AI'} Team`;
+
     const systemPrompt = `You are an AI assistant for a service business that helps respond to customer emails professionally.
 
 Business Context:
 ${JSON.stringify(businessContext || { name: 'AutoStaff AI', type: 'Service Business' }, null, 2)}
 
+RESPONSE STYLE:
+- Tone: ${toneInstructions[tone] || toneInstructions.professional}
+- Length: ${lengthInstructions[length] || lengthInstructions.medium}
+${customInstructions ? `- Custom Instructions: ${customInstructions}` : ''}
+
 Your responsibilities:
-1. Respond professionally and warmly
+1. Respond with the specified tone and length above
 2. Answer questions clearly
 3. REMEMBER and reference information the customer provides (address, phone, specific details)
 4. Ask for missing information only if not already provided in conversation
 5. Guide toward booking a site visit, consultation, or getting a quote
-6. Keep responses conversational and natural (2-4 sentences)
-7. ALWAYS end with a professional signature:
-   
-   Best regards,
-   ${businessContext?.name || 'AutoStaff AI'} Team
+${includeSignature ? `6. ALWAYS end with this signature (on new lines):\n\n${signature}` : '6. Do NOT include a signature - just the message content.'}
 
 ${availableSlots && availableSlots.length > 0 ? `
 AVAILABLE TIME SLOTS for site visits/consultations:
@@ -361,6 +405,115 @@ ${conversationHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n\n')}
       bookingRequested,
       confirmedSlot,
       quoteRequested,
+    };
+  }
+
+  async generateFollowUpMessage(params: {
+    leadInfo: any;
+    lastMessage: string;
+    lastMessageDate: Date;
+    conversationHistory?: Array<{ role: string; content: string }>;
+    businessContext?: any;
+    userId?: string;
+  }): Promise<{
+    subject: string;
+    body: string;
+    confidence: number;
+  }> {
+    const { leadInfo, lastMessage, lastMessageDate, conversationHistory = [], businessContext, userId } = params;
+
+    // Fetch user's automation settings for response customization
+    let userSettings: any = {};
+    if (userId) {
+      try {
+        const user: any = await this.prisma.user.findFirst({
+          where: {
+            OR: [
+              { clerkId: userId },
+              { id: userId },
+            ],
+          },
+        });
+        
+        if (user?.automationSettings) {
+          userSettings = JSON.parse(user.automationSettings);
+        }
+      } catch (error) {
+        this.logger.warn(`Could not load user settings: ${error.message}`);
+      }
+    }
+
+    // Map tone and length
+    const toneInstructions = {
+      professional: 'Use a professional and formal tone.',
+      friendly: 'Use a warm, friendly tone.',
+      casual: 'Use a casual, relaxed tone.',
+      enthusiastic: 'Use an enthusiastic tone.',
+    };
+    
+    const lengthInstructions = {
+      short: 'Keep it brief (1-2 sentences).',
+      medium: 'Keep it conversational (2-3 sentences).',
+      long: 'Provide a detailed response (3-5 sentences).',
+    };
+
+    const tone = userSettings.responseTone || 'professional';
+    const length = userSettings.responseLength || 'medium';
+    const includeSignature = userSettings.includeSignature !== false;
+    const signature = userSettings.signature || `Best regards,\n${businessContext?.name || 'AutoStaff AI'} Team`;
+
+    const daysSinceLastMessage = Math.floor((Date.now() - new Date(lastMessageDate).getTime()) / (1000 * 60 * 60 * 24));
+
+    const systemPrompt = `You are an AI assistant for ${businessContext?.name || 'a service business'} following up with a potential customer who hasn't responded.
+
+Business Context:
+${JSON.stringify(businessContext || { name: 'AutoStaff AI', type: 'Service Business' }, null, 2)}
+
+RESPONSE STYLE:
+- Tone: ${toneInstructions[tone] || toneInstructions.professional}
+- Length: ${lengthInstructions[length] || lengthInstructions.medium}
+
+Your goal:
+1. Politely follow up on their previous inquiry
+2. Show you're still interested in helping them
+3. Make it easy for them to respond (ask a simple question or offer next steps)
+4. Be understanding that they might be busy
+5. Reference their original inquiry briefly
+${includeSignature ? `6. End with this signature:\n\n${signature}` : '6. Do NOT include a signature.'}
+
+Lead Information:
+- Name: ${leadInfo.name || 'Customer'}
+- Service Type: ${leadInfo.serviceType || 'Not specified'}
+- Stage: ${leadInfo.stage}
+
+It has been ${daysSinceLastMessage} days since their last message.`;
+
+    const userPrompt = `Generate a friendly follow-up email.
+
+Their last message (${daysSinceLastMessage} days ago):
+${lastMessage}
+
+${conversationHistory.length > 0 ? `Previous conversation context:
+${conversationHistory.slice(-5).map(msg => `${msg.role}: ${msg.content}`).join('\n\n')}
+
+` : ''}Write a brief, friendly follow-up that doesn't sound pushy. Show interest in helping without being aggressive.`;
+
+    const generatedBody = await this.callAI({
+      systemPrompt,
+      userPrompt,
+      temperature: 0.7,
+    });
+
+    // Generate subject line
+    const subject = `Following up - ${leadInfo.serviceType || 'Your inquiry'}`;
+
+    // Calculate confidence
+    const confidence = this.calculateResponseConfidence(leadInfo, lastMessage);
+
+    return {
+      subject,
+      body: generatedBody,
+      confidence,
     };
   }
 

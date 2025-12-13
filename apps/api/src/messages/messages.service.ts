@@ -146,6 +146,41 @@ export class MessagesService {
     });
   }
 
+  private isWithinWorkingHours(settings: any): boolean {
+    if (!settings?.respectWorkingHours) {
+      return true; // No restrictions
+    }
+
+    const now = new Date();
+    const currentDay = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][now.getDay()];
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+
+    // Check if current day is a working day
+    const workingDays = settings.workingDays || ['mon', 'tue', 'wed', 'thu', 'fri'];
+    if (!workingDays.includes(currentDay)) {
+      console.log(`[WORKING HOURS] Current day (${currentDay}) is not a working day`);
+      return false;
+    }
+
+    // Parse working hours (format: "HH:MM")
+    const startTime = settings.workingHoursStart || '09:00';
+    const endTime = settings.workingHoursEnd || '17:00';
+    
+    const [startHour, startMin] = startTime.split(':').map(Number);
+    const [endHour, endMin] = endTime.split(':').map(Number);
+    
+    const startMinutes = startHour * 60 + startMin;
+    const endMinutes = endHour * 60 + endMin;
+
+    const isWithinHours = currentTime >= startMinutes && currentTime < endMinutes;
+    
+    if (!isWithinHours) {
+      console.log(`[WORKING HOURS] Current time ${now.getHours()}:${now.getMinutes()} is outside working hours ${startTime}-${endTime}`);
+    }
+
+    return isWithinHours;
+  }
+
   async sendMessage(messageId: string, userClerkId: string) {
     console.log('[SEND MESSAGE] Starting send for message:', messageId, 'userClerkId:', userClerkId);
     
@@ -179,6 +214,26 @@ export class MessagesService {
     if (!message.toEmail) {
       console.error('[SEND MESSAGE] No recipient email');
       throw new Error('No recipient email');
+    }
+
+    // Check working hours settings
+    const user = await this.prisma.user.findFirst({
+      where: {
+        OR: [
+          { id: message.lead.userId },
+          { clerkId: userClerkId },
+        ],
+      },
+      select: {
+        automationSettings: true,
+      },
+    });
+
+    const settings = user?.automationSettings ? JSON.parse(user.automationSettings as string) : {};
+    
+    if (!this.isWithinWorkingHours(settings)) {
+      console.log('[SEND MESSAGE] Message blocked - outside working hours');
+      throw new Error('Cannot send messages outside of working hours. Please try again during business hours or disable working hours restrictions in automation settings.');
     }
 
     // Send via Gmail

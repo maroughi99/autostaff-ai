@@ -18,6 +18,98 @@ export class EmailPollerService {
     private quotesService: QuotesService,
   ) {}
 
+  private isSpamEmail(from: string, subject: string, body: string): boolean {
+    const spamIndicators = [
+      // Common spam phrases
+      'click here now', 'act now', 'limited time offer', 'free money',
+      'weight loss', 'viagra', 'cialis', 'casino', 'lottery',
+      'nigerian prince', 'inheritance', 'wire transfer',
+      'congratulations you won', 'claim your prize',
+      // Suspicious patterns
+      'dear sir/madam', 'dear friend',
+    ];
+
+    const textToCheck = `${subject} ${body}`.toLowerCase();
+    const hasSpamIndicator = spamIndicators.some(indicator => 
+      textToCheck.includes(indicator)
+    );
+
+    // Check for suspicious sender patterns
+    const suspiciousSenders = [
+      'noreply@', 'no-reply@', 'donotreply@',
+    ];
+    const hasSuspiciousSender = suspiciousSenders.some(pattern =>
+      from.toLowerCase().includes(pattern)
+    );
+
+    return hasSpamIndicator || hasSuspiciousSender;
+  }
+
+  private isMarketingEmail(from: string, subject: string, body: string, headers: any[]): boolean {
+    const marketingIndicators = [
+      'unsubscribe', 'manage your preferences', 'email preferences',
+      'newsletter', 'promotional', 'special offer', 'discount',
+      'sale', 'limited time', 'shop now', 'buy now',
+      'follow us on', 'connect with us',
+    ];
+
+    const textToCheck = `${subject} ${body}`.toLowerCase();
+    const hasMarketingIndicator = marketingIndicators.some(indicator =>
+      textToCheck.includes(indicator)
+    );
+
+    // Check for list-unsubscribe header (standard for marketing emails)
+    const hasUnsubscribeHeader = headers.some((h: any) =>
+      h.name?.toLowerCase() === 'list-unsubscribe'
+    );
+
+    // Check for bulk/marketing sender patterns
+    const bulkSenders = [
+      'newsletter@', 'marketing@', 'promo@', 'info@',
+      'news@', 'updates@', 'notifications@',
+    ];
+    const isBulkSender = bulkSenders.some(pattern =>
+      from.toLowerCase().includes(pattern)
+    );
+
+    return hasMarketingIndicator || hasUnsubscribeHeader || isBulkSender;
+  }
+
+  private isWithinWorkingHours(settings: any): boolean {
+    if (!settings?.respectWorkingHours) {
+      return true; // No restrictions
+    }
+
+    const now = new Date();
+    const currentDay = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][now.getDay()];
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+
+    // Check if current day is a working day
+    const workingDays = settings.workingDays || ['mon', 'tue', 'wed', 'thu', 'fri'];
+    if (!workingDays.includes(currentDay)) {
+      this.logger.log(`[WORKING HOURS] Current day (${currentDay}) is not a working day`);
+      return false;
+    }
+
+    // Parse working hours (format: "HH:MM")
+    const startTime = settings.workingHoursStart || '09:00';
+    const endTime = settings.workingHoursEnd || '17:00';
+    
+    const [startHour, startMin] = startTime.split(':').map(Number);
+    const [endHour, endMin] = endTime.split(':').map(Number);
+    
+    const startMinutes = startHour * 60 + startMin;
+    const endMinutes = endHour * 60 + endMin;
+
+    const isWithinHours = currentTime >= startMinutes && currentTime < endMinutes;
+    
+    if (!isWithinHours) {
+      this.logger.log(`[WORKING HOURS] Current time ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')} is outside working hours ${startTime}-${endTime}`);
+    }
+
+    return isWithinHours;
+  }
+
   @Cron(CronExpression.EVERY_MINUTE)
   async pollEmails() {
     this.logger.log('🔍 Checking for new emails...');
@@ -48,8 +140,343 @@ export class EmailPollerService {
       this.logger.error('Error in email polling:', error.stack || error);
       // Cron will continue and retry next minute
     }
+  }
+
+  @Cron(CronExpression.EVERY_HOUR)
+  async checkFollowUps() {
+    this.logger.log('🔄 Checking for leads needing follow-up...');
+
+    try {
+      // Get all users with Gmail connected
+      const users = await this.prisma.user.findMany({
+        where: {
+          gmailConnected: true,
+          gmailAccessToken: { not: null },
+        },
+      });
+
+      this.logger.log(`Found ${users.length} users to check for follow-ups`);
+
+      for (const user of users) {
+        try {
+          await this.processFollowUps(user.id, user.clerkId);
+        } catch (error) {
+          this.logger.error(
+            `Error processing follow-ups for user ${user.id}:`,
+            error.stack || error,
+          );
+          // Continue to next user even if this one fails
+        }
+      }
+    } catch (error) {
+      this.logger.error('Error in follow-up check:', error.stack || error);
+    }
+  }
+
+  @Cron(CronExpression.EVERY_HOUR)
+  async sendBookingReminders() {
+    this.logger.log('⏰ Checking for appointments needing reminders...');
+
+    try {
+      // Get all users with booking reminders enabled
+      const users = await this.prisma.user.findMany({
+        where: {
+          gmailConnected: true,
+          gmailAccessToken: { not: null },
+        },
+      });
+
+      for (const user of users) {
+        try {
+          // Load automation settings
+          let automationSettings: any = {};
+          try {
+            automationSettings = (user as any).automationSettings 
+              ? JSON.parse((user as any).automationSettings as string) 
+              : {};
+          } catch (error) {
+            this.logger.error('Failed to parse automation settings:', error);
+            continue;
+          }
+
+          const sendBookingReminders = automationSettings.sendBookingReminders !== false;
+          const reminderHoursBefore = automationSettings.reminderHoursBefore || 24;
+
+          if (!sendBookingReminders) {
+            continue;
+          }
+
+          // Calculate the reminder window
+          const reminderWindowStart = new Date();
+          reminderWindowStart.setHours(reminderWindowStart.getHours() + reminderHoursBefore - 1);
+          const reminderWindowEnd = new Date();
+          reminderWindowEnd.setHours(reminderWindowEnd.getHours() + reminderHoursBefore + 1);
+
+          // Find leads with appointments in the reminder window that haven't been reminded
+          const leadsNeedingReminder = await this.prisma.lead.findMany({
+            where: {
+              userId: user.id,
+              appointmentDate: {
+                gte: reminderWindowStart,
+                lte: reminderWindowEnd,
+              },
+              stage: 'scheduled',
+              // Only send if we haven't sent a reminder recently
+              updatedAt: {
+                lt: new Date(Date.now() - 60 * 60 * 1000), // At least 1 hour since last update
+              },
+            },
+          });
+
+          this.logger.log(`Found ${leadsNeedingReminder.length} appointments needing reminders for user ${user.email}`);
+
+          for (const lead of leadsNeedingReminder) {
+            try {
+              await this.sendReminderEmail(user, lead, reminderHoursBefore);
+            } catch (error) {
+              this.logger.error(`Failed to send reminder for lead ${lead.id}:`, error);
+            }
+          }
+        } catch (error) {
+          this.logger.error(`Error processing reminders for user ${user.id}:`, error);
+        }
+      }
+    } catch (error) {
+      this.logger.error('Error in booking reminder check:', error);
+    }
+  }
+
+  private async sendReminderEmail(user: any, lead: any, hoursBefore: number) {
+    const appointmentDate = new Date(lead.appointmentDate);
+    const formattedDate = appointmentDate.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+    const formattedTime = appointmentDate.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+
+    const subject = `Reminder: Appointment Tomorrow at ${formattedTime}`;
+    const body = `Hi ${lead.name},
+
+This is a friendly reminder about your upcoming appointment:
+
+📅 Date: ${formattedDate}
+⏰ Time: ${formattedTime}
+📍 Location: ${lead.address || 'To be confirmed'}
+${lead.serviceType ? `🔧 Service: ${lead.serviceType}` : ''}
+
+${lead.appointmentNotes ? `Notes: ${lead.appointmentNotes}` : ''}
+
+If you need to reschedule or have any questions, please let us know!
+
+Best regards,
+${user.businessName || 'Your Team'}`;
+
+    try {
+      // Send via Gmail
+      await this.gmailService.sendMessage(
+        user.id,
+        lead.email,
+        subject,
+        body,
+      );
+
+      this.logger.log(`✅ Sent booking reminder to ${lead.email} for appointment on ${formattedDate}`);
+
+      // Update lead to mark reminder sent
+      await this.prisma.lead.update({
+        where: { id: lead.id },
+        data: { updatedAt: new Date() },
+      });
+    } catch (error) {
+      this.logger.error(`Failed to send reminder email to ${lead.email}:`, error);
+      throw error;
+    }
+  }
+
+  private async processFollowUps(userId: string, clerkId: string) {
+    // Load user automation settings
+    const userFull: any = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!userFull) {
+      return;
+    }
+
+    const automationSettings = userFull.automationSettings 
+      ? JSON.parse(userFull.automationSettings) 
+      : {};
+
+    // Check if auto-follow-up is enabled
+    const autoFollowUp = automationSettings.autoFollowUp === true;
+    const autoScheduleFollowUp = automationSettings.autoScheduleFollowUp === true;
     
-    this.logger.log('✅ Email polling cycle complete');
+    if (!autoFollowUp && !autoScheduleFollowUp) {
+      this.logger.debug(`Follow-up disabled for user ${userId}`);
+      return;
+    }
+
+    const followUpDelayDays = automationSettings.followUpDelayDays || 3;
+    const followUpDelayMs = followUpDelayDays * 24 * 60 * 60 * 1000;
+    const cutoffDate = new Date(Date.now() - followUpDelayMs);
+
+    this.logger.log(`📅 Looking for leads with no response since ${cutoffDate.toISOString()}`);
+
+    // Find leads that need follow-up:
+    // 1. Last message was inbound (from customer)
+    // 2. No outbound response sent after it
+    // 3. Created/last message is older than followUpDelayDays
+    // 4. Lead is not in 'won', 'lost', or 'completed' stage
+    const leads = await this.prisma.lead.findMany({
+      where: {
+        userId: userId,
+        stage: {
+          notIn: ['won', 'lost', 'completed'],
+        },
+        updatedAt: {
+          lte: cutoffDate,
+        },
+      },
+      include: {
+        messages: {
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+        },
+      },
+    });
+
+    this.logger.log(`Found ${leads.length} potential leads for follow-up`);
+
+    for (const lead of leads) {
+      try {
+        // Skip if no messages
+        if (lead.messages.length === 0) {
+          continue;
+        }
+
+        // Get the most recent message
+        const lastMessage = lead.messages[0];
+
+        // Skip if last message was outbound (we already responded)
+        if (lastMessage.direction === 'outbound') {
+          continue;
+        }
+
+        // Skip if last message was too recent
+        const timeSinceLastMessage = Date.now() - new Date(lastMessage.createdAt).getTime();
+        if (timeSinceLastMessage < followUpDelayMs) {
+          continue;
+        }
+
+        // Check if we already sent a follow-up for this message
+        const followUpExists = await this.prisma.message.findFirst({
+          where: {
+            leadId: lead.id,
+            inReplyToId: lastMessage.id,
+            isAiGenerated: true,
+            createdAt: {
+              gte: new Date(lastMessage.createdAt),
+            },
+          },
+        });
+
+        if (followUpExists) {
+          this.logger.debug(`Follow-up already sent for lead ${lead.name}`);
+          continue;
+        }
+
+        this.logger.log(`📬 Generating follow-up for lead: ${lead.name} (${lead.email})`);
+        await this.generateFollowUp(lead, lastMessage, userId, clerkId, automationSettings);
+
+      } catch (error) {
+        this.logger.error(`Failed to process follow-up for lead ${lead.id}:`, error);
+      }
+    }
+  }
+
+  private async generateFollowUp(lead: any, lastMessage: any, userId: string, clerkId: string, automationSettings: any) {
+    try {
+      // Get conversation history
+      const conversationHistory = lead.messages
+        .slice(0, 10)
+        .reverse()
+        .map(msg => ({
+          role: msg.direction === 'inbound' ? 'user' : 'assistant',
+          content: msg.content,
+        }));
+
+      // Generate follow-up message
+      const followUpReply = await this.aiService.generateFollowUpMessage({
+        leadInfo: {
+          name: lead.name,
+          email: lead.email,
+          phone: lead.phone,
+          address: lead.address,
+          serviceType: lead.serviceType,
+          stage: lead.stage,
+          priority: lead.priority,
+        },
+        lastMessage: lastMessage.content,
+        lastMessageDate: lastMessage.createdAt,
+        conversationHistory,
+        businessContext: {
+          name: automationSettings.businessName || 'AutoStaff AI',
+          type: automationSettings.businessType || 'Service Business',
+        },
+        userId: clerkId,
+      });
+
+      // Check working hours
+      const isWithinWorkingHours = this.isWithinWorkingHours(automationSettings);
+
+      // Check if we should auto-send (requires both auto-approve AND within working hours)
+      const shouldAutoSend = automationSettings.aiAutoApprove === true && isWithinWorkingHours;
+
+      // Create the follow-up message
+      const followUpMessage = await this.prisma.message.create({
+        data: {
+          leadId: lead.id,
+          direction: 'outbound',
+          channel: 'email',
+          subject: followUpReply.subject,
+          content: followUpReply.body,
+          fromEmail: lastMessage.toEmail, // Business email
+          toEmail: lead.email,
+          isAiGenerated: true,
+          aiApprovalNeeded: !shouldAutoSend,
+          aiConfidence: followUpReply.confidence,
+          inReplyToId: lastMessage.id,
+          sentAt: shouldAutoSend ? new Date() : null,
+        },
+      });
+
+      if (shouldAutoSend) {
+        // Auto-send the follow-up
+        try {
+          await this.gmailService.sendMessage(
+            clerkId,
+            lead.email,
+            followUpReply.subject,
+            followUpReply.body,
+          );
+          this.logger.log(`📤 Auto-sent follow-up to ${lead.name} (ID: ${followUpMessage.id})`);
+        } catch (error) {
+          this.logger.error(`❌ Failed to auto-send follow-up:`, error);
+        }
+      } else if (!isWithinWorkingHours) {
+        this.logger.log(`⏰ Follow-up delayed - outside working hours for ${lead.name} (ID: ${followUpMessage.id})`);
+      } else {
+        this.logger.log(`✋ Follow-up needs approval for ${lead.name} (ID: ${followUpMessage.id})`);
+      }
+
+    } catch (error) {
+      this.logger.error(`Failed to generate follow-up for lead ${lead.id}:`, error);
+    }
   }
 
   private async processUserEmails(userId: string, clerkId: string) {
@@ -145,17 +572,80 @@ export class EmailPollerService {
     this.logger.log(`📧 New email from: ${from}`);
     this.logger.log(`📋 Subject: ${subject}`);
 
+    // Load user automation settings early
+    const userSettingsData: any = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    
+    const userAutomationSettings = userSettingsData?.automationSettings 
+      ? JSON.parse(userSettingsData.automationSettings) 
+      : {};
+
+    // Apply email filters
+    const spamFilter = userAutomationSettings.spamFilter !== false; // Default true
+    const autoArchiveMarketing = userAutomationSettings.autoArchiveMarketing === true; // Default false
+    const requireApprovalForNew = userAutomationSettings.requireApprovalForNew !== false; // Default true
+
+    // Check spam filter
+    if (spamFilter && this.isSpamEmail(from, subject, body)) {
+      this.logger.log(`🚫 Spam detected - skipping email from ${from}`);
+      // Mark as read and skip processing
+      await gmail.users.messages.modify({
+        userId: 'me',
+        id: messageId,
+        requestBody: {
+          removeLabelIds: ['UNREAD'],
+          addLabelIds: ['SPAM'],
+        },
+      });
+      return;
+    }
+
+    // Check marketing filter
+    if (autoArchiveMarketing && this.isMarketingEmail(from, subject, body, headers)) {
+      this.logger.log(`📮 Marketing email detected - archiving from ${from}`);
+      // Archive and mark as read
+      await gmail.users.messages.modify({
+        userId: 'me',
+        id: messageId,
+        requestBody: {
+          removeLabelIds: ['UNREAD', 'INBOX'],
+        },
+      });
+      return;
+    }
+
+    // Extract sender email
+    const senderEmail = from.match(/<(.+)>/)?.[1] || from;
+
+    // Check if this is a new contact (requireApprovalForNew)
+    let existingLead = await this.prisma.lead.findFirst({
+      where: {
+        userId,
+        email: senderEmail,
+      },
+    });
+
+    const isNewContact = !existingLead;
+
     // Extract lead info and classify message with AI
     this.logger.log(`🔍 Extracting lead information from email...`);
     const leadInfo = await this.aiService.extractLeadInfo(body);
     this.logger.log(`📊 Extracted info: ${JSON.stringify(leadInfo)}`);
     
-    const classification = await this.aiService.classifyMessage(body);
-    this.logger.log(`🏷️ Classification: ${JSON.stringify(classification)}`);
+    // Only classify with AI if auto-categorize is enabled
+    let classification = { category: 'inquiry', intent: 'general' };
+    const autoCategorizeleads = userAutomationSettings.autoCategorizeleads !== false; // Default true
+    
+    if (autoCategorizeleads) {
+      this.logger.log(`🤖 Auto-categorize enabled - classifying message with AI`);
+      classification = await this.aiService.classifyMessage(body);
+      this.logger.log(`🏷️ Classification: ${JSON.stringify(classification)}`);
+    } else {
+      this.logger.log(`⚠️ Auto-categorize disabled - using default classification`);
+    }
 
-    // Parse email address
-    const emailMatch = from.match(/<(.+?)>/);
-    const senderEmail = emailMatch ? emailMatch[1] : from;
+    // Parse email address and sender name
     const senderName = from.replace(/<.*?>/, '').trim() || senderEmail;
 
     // Find or create lead
@@ -165,6 +655,34 @@ export class EmailPollerService {
         email: senderEmail,
       },
     });
+
+    // Determine priority based on AI analysis if auto-assign is enabled
+    const autoAssignPriority = userAutomationSettings.autoAssignPriority !== false; // Default true
+    let determinedPriority = 'medium';
+    
+    if (autoAssignPriority) {
+      // Analyze urgency keywords and classification
+      const urgentKeywords = ['urgent', 'emergency', 'asap', 'immediately', 'critical', 'broken', 'leaking', 'flooding'];
+      const isUrgent = urgentKeywords.some(keyword => body.toLowerCase().includes(keyword));
+      
+      const highValueKeywords = ['commercial', 'business', 'multiple', 'large project', 'building'];
+      const isHighValue = highValueKeywords.some(keyword => body.toLowerCase().includes(keyword));
+      
+      if (isUrgent) {
+        determinedPriority = 'high';
+        this.logger.log(`🚨 High priority detected: urgent keywords found`);
+      } else if (isHighValue || classification.category === 'quote') {
+        determinedPriority = 'high';
+        this.logger.log(`💰 High priority detected: high-value or quote request`);
+      } else if (classification.category === 'general' || classification.category === 'spam') {
+        determinedPriority = 'low';
+        this.logger.log(`📝 Low priority detected: general inquiry`);
+      } else {
+        determinedPriority = 'medium';
+      }
+    } else {
+      this.logger.log(`⚠️ Auto-assign priority disabled - using default 'medium'`);
+    }
 
     if (!lead) {
       this.logger.log(`👤 Creating new lead: ${senderName}`);
@@ -178,7 +696,7 @@ export class EmailPollerService {
           source: 'email',
           serviceType: leadInfo.serviceType,
           description: body.substring(0, 500),
-          priority: 'medium',
+          priority: determinedPriority,
           stage: 'new',
           aiClassification: classification.category,
           aiIntent: classification.intent,
@@ -188,15 +706,28 @@ export class EmailPollerService {
     } else {
       this.logger.log(`📌 Existing lead: ${lead.name}`);
       // Update lead with new info if available
+      const updateData: any = {
+        phone: leadInfo.phone || lead.phone,
+        address: leadInfo.address || lead.address,
+        serviceType: leadInfo.serviceType || lead.serviceType,
+        aiClassification: classification.category,
+      };
+      
+      // Update priority if auto-assign is enabled and it's higher priority
+      if (autoAssignPriority) {
+        const priorityLevels = { low: 1, medium: 2, high: 3 };
+        if (priorityLevels[determinedPriority] > priorityLevels[lead.priority]) {
+          updateData.priority = determinedPriority;
+          this.logger.log(`📊 Updating lead priority from ${lead.priority} to ${determinedPriority}`);
+        }
+      }
+      
+      // Add aiIntent to update data
+      updateData.aiIntent = classification.intent;
+      
       await this.prisma.lead.update({
         where: { id: lead.id },
-        data: {
-          phone: leadInfo.phone || lead.phone,
-          address: leadInfo.address || lead.address,
-          serviceType: leadInfo.serviceType || lead.serviceType,
-          aiClassification: classification.category,
-          aiIntent: classification.intent,
-        },
+        data: updateData,
       });
     }
 
@@ -219,6 +750,14 @@ export class EmailPollerService {
     });
 
     this.logger.log(`💾 Stored inbound message ${inboundMessage.id}`);
+
+    // Check if auto-respond is enabled (we already loaded settings earlier)
+    const autoRespondEnabled = userAutomationSettings.autoRespondEmails !== false; // Default true
+    
+    if (!autoRespondEnabled) {
+      this.logger.log(`🚫 Auto-respond disabled for user - skipping AI response generation`);
+      return;
+    }
 
     // Generate AI response
     try {
@@ -395,36 +934,119 @@ export class EmailPollerService {
         this.logger.debug('No confirmed slot in AI reply');
       }
 
-      // If customer requested a quote, mark lead for manual quoting
-      // DO NOT auto-generate quotes - they need real measurements and assessment
+      // If customer requested a quote, check automation settings
       if (aiReply.quoteRequested) {
-        this.logger.log('💰 Quote request detected - marking lead for manual review');
+        this.logger.log('💰 Quote request detected - checking automation settings');
         
-        try {
-          // Update lead to "quoted" stage so it appears in dashboard for manual quote creation
+        const autoGenerateQuotes = userAutomationSettings.autoGenerateQuotes === true;
+        const requireQuoteApproval = userAutomationSettings.requireQuoteApproval !== false; // Default true
+        const minQuoteAmount = userAutomationSettings.minQuoteAmount || 100;
+        const maxQuoteAmount = userAutomationSettings.maxQuoteAmount || 10000;
+        
+        if (autoGenerateQuotes) {
+          this.logger.log(`🤖 Auto-generate quotes enabled - generating AI quote`);
+          
+          try {
+            // Generate quote using AI
+            const quoteResult = await this.aiService.generateQuote(
+              body, // Customer's request
+              userInfo.businessType,
+              conversationHistory,
+              clerkId,
+            );
+
+            // Calculate if quote is within auto-approve limits
+            const quoteTotal = quoteResult.items.reduce((sum: number, item: any) => 
+              sum + (item.quantity * item.unitPrice), 0
+            );
+            const withTax = quoteTotal * (1 + (quoteResult.taxRate || 0) / 100);
+
+            const isWithinLimits = withTax >= minQuoteAmount && withTax <= maxQuoteAmount;
+            const needsApproval = requireQuoteApproval || !isWithinLimits;
+
+            this.logger.log(`📊 Quote total: $${withTax.toFixed(2)} (limits: $${minQuoteAmount}-$${maxQuoteAmount})`);
+
+            // Create the quote in database
+            const quoteData = await this.quotesService.create({
+              leadId: lead.id,
+              title: quoteResult.title || `Quote for ${lead.name}`,
+              description: quoteResult.description || '',
+              notes: quoteResult.notes || '',
+              items: quoteResult.items,
+              taxRate: quoteResult.taxRate || 13,
+              discount: 0,
+              expiresAt: userAutomationSettings.quoteValidityDays 
+                ? new Date(Date.now() + userAutomationSettings.quoteValidityDays * 24 * 60 * 60 * 1000)
+                : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Default 30 days
+            });
+
+            this.logger.log(`✅ Created AI-generated quote #${quoteData.quoteNumber} for ${lead.name}`);
+
+            // Update lead stage
+            await this.prisma.lead.update({
+              where: { id: lead.id },
+              data: { 
+                stage: 'quoted',
+                priority: 'high',
+              },
+            });
+
+            // If doesn't need approval and within working hours, could auto-send
+            // For now, quotes always need review before sending to customer
+            if (needsApproval) {
+              this.logger.log(`✋ Quote needs approval (approval required: ${requireQuoteApproval}, within limits: ${isWithinLimits})`);
+            } else {
+              this.logger.log(`✅ Quote approved - within limits and approval not required`);
+            }
+
+          } catch (error) {
+            this.logger.error(`❌ Failed to auto-generate quote:`, error.message);
+            // Fall back to manual quote creation
+            await this.prisma.lead.update({
+              where: { id: lead.id },
+              data: { 
+                stage: 'contacted',
+                priority: 'high',
+              },
+            });
+            this.logger.log(`⚠️ Marked lead for manual quote creation`);
+          }
+        } else {
+          this.logger.log('📝 Auto-generate quotes disabled - marking for manual review');
+          
+          // Mark lead for manual quoting
           await this.prisma.lead.update({
             where: { id: lead.id },
             data: { 
-              stage: 'contacted', // Keep in contacted stage until manual quote is created
-              priority: 'high', // Bump priority since they want pricing
+              stage: 'contacted',
+              priority: 'high',
             },
           });
 
           this.logger.log(`✅ Lead ${lead.name} marked as high priority - needs manual quote`);
-        } catch (error) {
-          this.logger.error(`❌ Failed to update lead:`, error.message);
         }
       }
 
-      // Get user settings to check auto-approve
+      // Get user settings to check auto-approve (we already have automation settings)
       const userSettings = await this.prisma.user.findUnique({
         where: { id: userId },
-        select: { aiAutoApprove: true },
+        select: { 
+          aiAutoApprove: true,
+        },
       });
 
-      // If user has auto-approve ON, send automatically
-      // (The AI service always sets needsApproval=true for safety, so we override it here)
-      const shouldAutoSend = userSettings?.aiAutoApprove === true;
+      // Check if we're within working hours (using already-loaded settings)
+      const isWithinWorkingHours = this.isWithinWorkingHours(userAutomationSettings);
+
+      // Check if approval needed due to new contact filter
+      const needsApprovalDueToNewContact = requireApprovalForNew && isNewContact;
+      
+      if (needsApprovalDueToNewContact) {
+        this.logger.log(`👤 New contact detected - requiring approval before responding`);
+      }
+
+      // If user has auto-approve ON AND we're within working hours AND not a new contact (or filter disabled), send automatically
+      const shouldAutoSend = userSettings?.aiAutoApprove === true && isWithinWorkingHours && !needsApprovalDueToNewContact;
 
       // Store AI-generated draft response
       const draftMessage = await this.prisma.message.create({
@@ -460,6 +1082,8 @@ export class EmailPollerService {
         } catch (error) {
           this.logger.error(`❌ Failed to auto-send:`, error);
         }
+      } else if (!isWithinWorkingHours) {
+        this.logger.log(`⏰ AI response delayed - outside working hours (ID: ${draftMessage.id})`);
       } else if (aiReply.needsApproval) {
         this.logger.log(`✋ AI response needs approval (ID: ${draftMessage.id})`);
       } else {

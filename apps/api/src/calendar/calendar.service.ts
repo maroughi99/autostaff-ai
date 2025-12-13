@@ -35,9 +35,33 @@ export class CalendarService {
     return google.calendar({ version: 'v3', auth: this.oauth2Client });
   }
 
+  async getBookingSettings(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { clerkId: userId },
+    });
+
+    let settings: any = {};
+    try {
+      settings = user?.automationSettings
+        ? JSON.parse(user.automationSettings as string)
+        : {};
+    } catch (error) {
+      console.error('Failed to parse automation settings:', error);
+    }
+
+    return {
+      autoBookAppointments: settings.autoBookAppointments ?? false,
+      bufferTimeBetweenBookings: settings.bufferTimeBetweenBookings ?? 30,
+      maxBookingsPerDay: settings.maxBookingsPerDay ?? 5,
+      sendBookingReminders: settings.sendBookingReminders ?? true,
+      reminderHoursBefore: settings.reminderHoursBefore ?? 24,
+    };
+  }
+
   async getAvailableSlots(userId: string, durationMinutes: number = 60, daysAhead: number = 14) {
     try {
       const calendar = await this.getCalendarClient(userId);
+      const bookingSettings = await this.getBookingSettings(userId);
 
       const now = new Date();
       const endDate = new Date();
@@ -80,30 +104,48 @@ export class CalendarService {
           // Skip if slot is in the past
           if (slotStart < now) continue;
 
-          // Check if slot conflicts with existing events
+          // Check if slot conflicts with existing events (including buffer time)
           const hasConflict = busySlots.some((event: any) => {
             const eventStart = new Date(event.start.dateTime || event.start.date);
             const eventEnd = new Date(event.end.dateTime || event.end.date);
             
+            // Add buffer time before and after existing events
+            const bufferMs = bookingSettings.bufferTimeBetweenBookings * 60 * 1000;
+            const bufferedStart = new Date(eventStart.getTime() - bufferMs);
+            const bufferedEnd = new Date(eventEnd.getTime() + bufferMs);
+            
             return (
-              (slotStart >= eventStart && slotStart < eventEnd) ||
-              (slotEnd > eventStart && slotEnd <= eventEnd) ||
-              (slotStart <= eventStart && slotEnd >= eventEnd)
+              (slotStart >= bufferedStart && slotStart < bufferedEnd) ||
+              (slotEnd > bufferedStart && slotEnd <= bufferedEnd) ||
+              (slotStart <= bufferedStart && slotEnd >= bufferedEnd)
             );
           });
 
           if (!hasConflict) {
-            availableSlots.push({
-              start: slotStart.toISOString(),
-              end: slotEnd.toISOString(),
-              formatted: slotStart.toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                month: 'long', 
-                day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit'
-              }),
-            });
+            // Check if this day already has max bookings
+            const dayStart = new Date(date);
+            dayStart.setHours(0, 0, 0, 0);
+            const dayEnd = new Date(date);
+            dayEnd.setHours(23, 59, 59, 999);
+            
+            const bookingsThisDay = busySlots.filter((event: any) => {
+              const eventStart = new Date(event.start.dateTime || event.start.date);
+              return eventStart >= dayStart && eventStart <= dayEnd;
+            }).length;
+            
+            if (bookingsThisDay < bookingSettings.maxBookingsPerDay) {
+              availableSlots.push({
+                start: slotStart.toISOString(),
+                end: slotEnd.toISOString(),
+                formatted: slotStart.toLocaleDateString('en-US', { 
+                  weekday: 'long', 
+                  month: 'long', 
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit'
+                }),
+              });
+            }
           }
         }
       }
@@ -124,6 +166,14 @@ export class CalendarService {
     attendeeEmail?: string,
   ) {
     try {
+      const bookingSettings = await this.getBookingSettings(userId);
+      
+      // Check if auto-booking is enabled
+      if (!bookingSettings.autoBookAppointments) {
+        console.log('⚠️ Auto-booking disabled - event not created');
+        return { message: 'Auto-booking is disabled. Manual approval required.' };
+      }
+
       const calendar = await this.getCalendarClient(userId);
 
       const event = {

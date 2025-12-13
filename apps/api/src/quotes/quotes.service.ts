@@ -187,6 +187,19 @@ export class QuotesService {
       throw new Error('Gmail not connected. Please connect your Gmail account in Settings to send quotes.');
     }
 
+    // Load automation settings to check if we should include terms
+    const user = quote.lead.user;
+    let automationSettings: any = {};
+    try {
+      automationSettings = user.automationSettings 
+        ? JSON.parse(user.automationSettings as string) 
+        : {};
+    } catch (error) {
+      console.error('Failed to parse automation settings:', error);
+    }
+
+    const includeTerms = automationSettings.includeTermsInQuotes !== false; // Default true
+
     // Generate PDF on backend (we'll need to add jsPDF to API)
     // For now, we'll send a simple text email and let frontend handle PDF
     // In production, you'd generate PDF server-side
@@ -254,7 +267,7 @@ export class QuotesService {
               </div>
             </div>
             
-            ${quote.notes ? `
+            ${includeTerms && quote.notes ? `
               <div style="background: white; border-radius: 8px; padding: 20px; margin: 20px 0;">
                 <h3 style="margin-top: 0;">Notes & Terms</h3>
                 <p style="color: #6b7280; white-space: pre-line;">${quote.notes}</p>
