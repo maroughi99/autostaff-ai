@@ -79,6 +79,9 @@ export class MessagesController {
     @Param('id') id: string,
     @Query('userId') userId: string,
   ) {
+    if (!userId) {
+      throw new Error('userId query parameter is required');
+    }
     return this.messagesService.deleteMessage(id, userId);
   }
 }
