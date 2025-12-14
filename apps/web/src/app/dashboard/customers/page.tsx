@@ -490,6 +490,7 @@ export default function CustomersPage() {
       });
 
       if (response.ok) {
+        showToast('Customer deleted successfully', 'success');
         await fetchCustomers();
         if (selectedCustomer?.id === customerId) {
           setSelectedCustomer(null);

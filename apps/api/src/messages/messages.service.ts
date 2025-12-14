@@ -141,6 +141,15 @@ export class MessagesService {
   }
 
   async rejectDraft(messageId: string) {
+    // Check if message exists first
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+    });
+
+    if (!message) {
+      throw new Error('Message not found');
+    }
+
     return this.prisma.message.delete({
       where: { id: messageId },
     });

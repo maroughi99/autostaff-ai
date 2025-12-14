@@ -147,7 +147,6 @@ export default function InboxPage() {
 
   const handleReject = async () => {
     if (!selectedMessage) return;
-    if (!confirm('Are you sure you want to reject this AI response?')) return;
     
     setProcessing(true);
     try {
@@ -156,15 +155,16 @@ export default function InboxPage() {
       });
       
       if (!res.ok) {
-        throw new Error('Failed to reject draft');
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to reject draft: ${res.statusText}`);
       }
       
-      toast.success('Draft rejected');
+      toast.success('Draft rejected successfully');
       setSelectedMessage(null);
       loadMessages();
     } catch (error: any) {
       console.error('Failed to reject:', error);
-      toast.error(error.message || 'Failed to reject draft');
+      toast.error(error.message || 'Failed to reject draft. Please try again.');
     } finally {
       setProcessing(false);
     }
@@ -467,12 +467,12 @@ export default function InboxPage() {
                     Edit Response
                   </Button>
                   <Button 
-                    variant="outline"
+                    variant="destructive"
                     onClick={handleReject}
                     disabled={processing}
                   >
-                    <AlertCircle className="mr-2 h-4 w-4" />
-                    Reject
+                    <Trash className="mr-2 h-4 w-4" />
+                    {processing ? 'Deleting...' : 'Delete Draft'}
                   </Button>
                 </div>
               )}
