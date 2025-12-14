@@ -75,7 +75,10 @@ export class MessagesController {
   }
 
   @Delete(':id')
-  async deleteMessage(@Param('id') id: string) {
-    return this.messagesService.deleteMessage(id);
+  async deleteMessage(
+    @Param('id') id: string,
+    @Query('userId') userId: string,
+  ) {
+    return this.messagesService.deleteMessage(id, userId);
   }
 }

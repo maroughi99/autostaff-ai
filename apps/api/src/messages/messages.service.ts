@@ -275,7 +275,24 @@ export class MessagesService {
     }
   }
 
-  async deleteMessage(id: string) {
+  async deleteMessage(id: string, userId: string) {
+    // Verify the message belongs to the user
+    const message = await this.prisma.message.findFirst({
+      where: {
+        id,
+        lead: {
+          OR: [
+            { userId },
+            { user: { clerkId: userId } },
+          ],
+        },
+      },
+    });
+
+    if (!message) {
+      throw new Error('Message not found or access denied');
+    }
+
     await this.prisma.message.delete({
       where: { id },
     });

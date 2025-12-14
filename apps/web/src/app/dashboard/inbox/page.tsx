@@ -205,11 +205,15 @@ export default function InboxPage() {
     if (event) {
       event.stopPropagation();
     }
+    if (!user?.id) {
+      alert('User not authenticated');
+      return;
+    }
     if (!confirm('Are you sure you want to delete this message?')) return;
     
     setProcessing(true);
     try {
-      await fetch(`${API_URL}/messages/${messageId}`, {
+      await fetch(`${API_URL}/messages/${messageId}?userId=${user.id}`, {
         method: 'DELETE',
       });
       
@@ -362,14 +366,6 @@ export default function InboxPage() {
                       </span>
                     </div>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={(e) => handleDelete(message.id, e)}
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash className="h-4 w-4" />
-                  </Button>
                 </div>
               </div>
             ))
