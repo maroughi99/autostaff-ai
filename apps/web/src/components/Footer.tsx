@@ -59,13 +59,13 @@ export default function Footer() {
             <h4 className="text-white font-semibold mb-4">Contact</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <a href="mailto:support@autostaff-ai.com" className="hover:text-white transition-colors">
-                  support@autostaff-ai.com
+                <a href="mailto:support@autostaffai.com" className="hover:text-white transition-colors">
+                  support@autostaffai.com
                 </a>
               </li>
               <li>
-                <a href="mailto:privacy@autostaff-ai.com" className="hover:text-white transition-colors">
-                  privacy@autostaff-ai.com
+                <a href="mailto:privacy@autostaffai.com" className="hover:text-white transition-colors">
+                  privacy@autostaffai.com
                 </a>
               </li>
             </ul>
