@@ -10,7 +10,7 @@ import { API_URL } from '@/lib/utils';
 const plans = [
   {
     name: 'Starter',
-    price: 99,
+    price: 49,
     priceId: 'price_1SapXvGndNudz61YnAU6kLOn',
     description: 'Perfect for solo contractors and small teams',
     features: [
@@ -25,7 +25,7 @@ const plans = [
   },
   {
     name: 'Pro',
-    price: 199,
+    price: 149,
     priceId: 'price_1SapfOGndNudz61Yq2d7vGdX',
     description: 'For growing businesses',
     features: [

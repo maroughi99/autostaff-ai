@@ -160,7 +160,7 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto">
             <PricingCard
               name="Starter"
-              price="$99"
+              price="$49"
               description="Perfect for small contractors"
               features={[
                 'AI Email Responses',
@@ -172,7 +172,7 @@ export default function Home() {
             />
             <PricingCard
               name="Pro"
-              price="$199"
+              price="$149"
               description="For growing businesses"
               features={[
                 'Everything in Starter',
