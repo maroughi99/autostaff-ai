@@ -211,14 +211,22 @@ export default function InboxPage() {
     }
     if (!confirm('Are you sure you want to delete this message?')) return;
     
+    console.log('[DELETE] user.id:', user.id, 'messageId:', messageId);
+    
     setProcessing(true);
     try {
-      const response = await fetch(`${API_URL}/messages/${messageId}?userId=${user.id}`, {
+      const url = `${API_URL}/messages/${messageId}?userId=${user.id}`;
+      console.log('[DELETE] Request URL:', url);
+      
+      const response = await fetch(url, {
         method: 'DELETE',
       });
       
+      console.log('[DELETE] Response status:', response.status);
+      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Failed to delete message' }));
+        console.error('[DELETE] Error response:', errorData);
         throw new Error(errorData.message || 'Failed to delete message');
       }
       
