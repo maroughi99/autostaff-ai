@@ -11,7 +11,7 @@ const plans = [
   {
     name: 'Starter',
     price: 49,
-    priceId: 'price_1SapXvGndNudz61YnAU6kLOn',
+    priceId: 'price_1SeI9uGndNudz61YwJAaYa08',
     description: 'Perfect for solo contractors and small teams',
     features: [
       '50 AI conversations per month',
@@ -26,7 +26,7 @@ const plans = [
   {
     name: 'Pro',
     price: 149,
-    priceId: 'price_1SapfOGndNudz61Yq2d7vGdX',
+    priceId: 'price_1SeIARGndNudz61Y5M4OFkxX',
     description: 'For growing businesses',
     features: [
       '200 AI conversations per month',
