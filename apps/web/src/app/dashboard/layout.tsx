@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
-import { Bot, LayoutDashboard, Mail, Users, FileText, Settings, Zap, Calendar, DollarSign, CreditCard, PieChart, Briefcase, Menu, X, Shield } from 'lucide-react';
+import { Bot, LayoutDashboard, Mail, Users, FileText, Settings, Zap, Calendar, DollarSign, CreditCard, PieChart, Briefcase, Menu, X, Shield, Lock } from 'lucide-react';
 import { UserSync } from '@/components/UserSync';
 import { SubscriptionGuard } from '@/components/SubscriptionGuard';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@clerk/nextjs';
+import { API_URL } from '@/lib/utils';
 
 export default function DashboardLayout({
   children,
@@ -15,18 +16,43 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userPlan, setUserPlan] = useState<string | null>(null);
+  const { user } = useUser();
+
+  useEffect(() => {
+    const fetchUserPlan = async () => {
+      if (!user?.id) return;
+
+      try {
+        const response = await fetch(`${API_URL}/auth/me?userId=${user.id}`);
+        const userData = await response.json();
+        setUserPlan(userData.subscriptionTier || 'starter');
+      } catch (error) {
+        console.error('Failed to fetch user plan:', error);
+      }
+    };
+
+    fetchUserPlan();
+  }, [user]);
+
+  const isFeatureLocked = (feature: string) => {
+    if (feature === 'calendar' || feature === 'automation') {
+      return userPlan === 'starter';
+    }
+    return false;
+  };
 
   const navItems = [
-    { href: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" />, label: 'Dashboard' },
-    { href: '/dashboard/overview', icon: <PieChart className="h-5 w-5" />, label: 'Overview' },
-    { href: '/dashboard/inbox', icon: <Mail className="h-5 w-5" />, label: 'Inbox' },
-    { href: '/dashboard/leads', icon: <Users className="h-5 w-5" />, label: 'Leads' },
-    { href: '/dashboard/customers', icon: <Briefcase className="h-5 w-5" />, label: 'Customers' },
-    { href: '/dashboard/calendar', icon: <Calendar className="h-5 w-5" />, label: 'Calendar' },
-    { href: '/dashboard/billing', icon: <DollarSign className="h-5 w-5" />, label: 'Billing' },
-    { href: '/dashboard/subscription', icon: <CreditCard className="h-5 w-5" />, label: 'Subscription' },
-    { href: '/dashboard/automation', icon: <Zap className="h-5 w-5" />, label: 'Automation' },
-    { href: '/dashboard/settings', icon: <Settings className="h-5 w-5" />, label: 'Settings' },
+    { href: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" />, label: 'Dashboard', locked: false },
+    { href: '/dashboard/overview', icon: <PieChart className="h-5 w-5" />, label: 'Overview', locked: false },
+    { href: '/dashboard/inbox', icon: <Mail className="h-5 w-5" />, label: 'Inbox', locked: false },
+    { href: '/dashboard/leads', icon: <Users className="h-5 w-5" />, label: 'Leads', locked: false },
+    { href: '/dashboard/customers', icon: <Briefcase className="h-5 w-5" />, label: 'Customers', locked: false },
+    { href: '/dashboard/calendar', icon: <Calendar className="h-5 w-5" />, label: 'Calendar', locked: isFeatureLocked('calendar') },
+    { href: '/dashboard/billing', icon: <DollarSign className="h-5 w-5" />, label: 'Billing', locked: false },
+    { href: '/dashboard/subscription', icon: <CreditCard className="h-5 w-5" />, label: 'Subscription', locked: false },
+    { href: '/dashboard/automation', icon: <Zap className="h-5 w-5" />, label: 'Automation', locked: isFeatureLocked('automation') },
+    { href: '/dashboard/settings', icon: <Settings className="h-5 w-5" />, label: 'Settings', locked: false },
   ];
 
   const { user } = useUser();
@@ -84,6 +110,7 @@ export default function DashboardLayout({
                   >
                     {item.icon}
                     <span>{item.label}</span>
+                    {item.locked && <Lock className="ml-auto h-4 w-4 text-gray-400" />}
                   </Link>
                 ))}
               </nav>
@@ -101,7 +128,7 @@ export default function DashboardLayout({
           
           <nav className="space-y-2">
             {navItems.map((item) => (
-              <NavLink key={item.href} href={item.href} icon={item.icon}>
+              <NavLink key={item.href} href={item.href} icon={item.icon} locked={item.locked}>
                 {item.label}
               </NavLink>
             ))}
@@ -142,10 +169,12 @@ function NavLink({
   href,
   icon,
   children,
+  locked = false,
 }: {
   href: string;
   icon: React.ReactNode;
   children: React.ReactNode;
+  locked?: boolean;
 }) {
   return (
     <Link
@@ -154,6 +183,7 @@ function NavLink({
     >
       {icon}
       <span>{children}</span>
+      {locked && <Lock className="ml-auto h-4 w-4 text-gray-400" />}
     </Link>
   );
 }

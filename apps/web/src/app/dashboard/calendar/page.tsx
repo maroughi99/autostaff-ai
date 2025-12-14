@@ -76,13 +76,13 @@ export default function CalendarPage() {
     );
   }
 
-  // Check if user has access to calendar management feature
-  if (!hasFeature('calendar_management')) {
+  // Check if user has Pro or Ultimate plan - Calendar requires Pro+
+  if (plan === 'starter' || !hasFeature('calendar_management')) {
     return (
       <FeatureLocked
-        feature="Calendar & Appointment Management"
-        requiredPlan="Starter"
-        description="Schedule and manage site visits, appointments, and calendar bookings with your clients."
+        feature="Advanced Calendar & Appointment Management"
+        requiredPlan="Pro"
+        description="Manage appointments and calendar bookings with advanced features. Upgrade to Pro or Ultimate to unlock."
       />
     );
   }

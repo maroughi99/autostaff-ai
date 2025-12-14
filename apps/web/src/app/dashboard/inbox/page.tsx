@@ -206,24 +206,30 @@ export default function InboxPage() {
       event.stopPropagation();
     }
     if (!user?.id) {
-      alert('User not authenticated');
+      toast.error('User not authenticated');
       return;
     }
     if (!confirm('Are you sure you want to delete this message?')) return;
     
     setProcessing(true);
     try {
-      await fetch(`${API_URL}/messages/${messageId}?userId=${user.id}`, {
+      const response = await fetch(`${API_URL}/messages/${messageId}?userId=${user.id}`, {
         method: 'DELETE',
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to delete message' }));
+        throw new Error(errorData.message || 'Failed to delete message');
+      }
       
       if (selectedMessage?.id === messageId) {
         setSelectedMessage(null);
       }
+      toast.success('Message deleted successfully');
       loadMessages();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to delete:', error);
-      alert('Failed to delete message');
+      toast.error(error.message || 'Failed to delete message');
     } finally {
       setProcessing(false);
     }

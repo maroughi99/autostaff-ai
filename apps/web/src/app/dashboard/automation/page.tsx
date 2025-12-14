@@ -5,11 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Bot, CheckCircle, Zap, MessageSquare, Mail, Users, Clock, Save, Loader2, Calendar, DollarSign, Globe, Briefcase } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
+import { useSubscription } from "@/hooks/useSubscription";
+import { FeatureLocked } from "@/components/FeatureLocked";
 import { API_URL } from '@/lib/utils';
 import { toast } from 'sonner';
 
 export default function AutomationPage() {
   const { user } = useUser();
+  const { hasFeature, plan, loading: subscriptionLoading } = useSubscription();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -314,11 +317,22 @@ export default function AutomationPage() {
     }
   };
 
-  if (loading) {
+  if (loading || subscriptionLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
+    );
+  }
+
+  // Check if user has Pro or Ultimate plan - Automation requires Pro+
+  if (plan === 'starter') {
+    return (
+      <FeatureLocked
+        feature="AI Automation & Custom Training"
+        requiredPlan="Pro"
+        description="Configure advanced AI automation settings and custom training. Upgrade to Pro or Ultimate to unlock."
+      />
     );
   }
 

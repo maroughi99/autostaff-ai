@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards, BadRequestException } from '@nestjs/common';
 import { MessagesService } from './messages.service';
 import { SubscriptionGuard } from '../guards/subscription.guard';
 
@@ -79,8 +79,9 @@ export class MessagesController {
     @Param('id') id: string,
     @Query('userId') userId: string,
   ) {
+    console.log('[DELETE MESSAGE] Received request - messageId:', id, 'userId:', userId);
     if (!userId) {
-      throw new Error('userId query parameter is required');
+      throw new BadRequestException('userId query parameter is required');
     }
     return this.messagesService.deleteMessage(id, userId);
   }
