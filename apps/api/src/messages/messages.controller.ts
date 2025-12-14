@@ -54,8 +54,15 @@ export class MessagesController {
   }
 
   @Post(':id/reject')
-  async rejectDraft(@Param('id') id: string) {
-    return this.messagesService.rejectDraft(id);
+  async rejectDraft(
+    @Param('id') id: string,
+    @Query('userId') userId: string,
+  ) {
+    console.log('[REJECT DRAFT] Received request - messageId:', id, 'userId:', userId);
+    if (!userId) {
+      throw new BadRequestException('userId query parameter is required');
+    }
+    return this.messagesService.rejectDraft(id, userId);
   }
 
   @Post(':id/edit')

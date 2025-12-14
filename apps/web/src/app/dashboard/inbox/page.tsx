@@ -147,10 +147,14 @@ export default function InboxPage() {
 
   const handleReject = async () => {
     if (!selectedMessage) return;
+    if (!user?.id) {
+      toast.error('User not authenticated');
+      return;
+    }
     
     setProcessing(true);
     try {
-      const res = await fetch(`${API_URL}/messages/${selectedMessage.id}/reject`, {
+      const res = await fetch(`${API_URL}/messages/${selectedMessage.id}/reject?userId=${user.id}`, {
         method: 'POST',
       });
       

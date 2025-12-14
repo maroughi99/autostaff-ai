@@ -140,14 +140,22 @@ export class MessagesService {
     });
   }
 
-  async rejectDraft(messageId: string) {
-    // Check if message exists first
-    const message = await this.prisma.message.findUnique({
-      where: { id: messageId },
+  async rejectDraft(messageId: string, userId: string) {
+    // Verify the message belongs to the user
+    const message = await this.prisma.message.findFirst({
+      where: {
+        id: messageId,
+        lead: {
+          OR: [
+            { userId },
+            { user: { clerkId: userId } },
+          ],
+        },
+      },
     });
 
     if (!message) {
-      throw new Error('Message not found');
+      throw new Error('Message not found or access denied');
     }
 
     return this.prisma.message.delete({
