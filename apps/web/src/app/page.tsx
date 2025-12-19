@@ -109,7 +109,7 @@ export default function Home() {
               </Button>
             </div>
             <p className="text-xs md:text-sm text-muted-foreground mt-4">
-              7-day free trial • Cancel anytime
+              7-day free trial • Cancel anytime • <Link href="/privacy" className="underline hover:text-primary">Privacy Policy</Link>
             </p>
           </div>
         </div>
