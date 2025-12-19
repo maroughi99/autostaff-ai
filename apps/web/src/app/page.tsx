@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Bot, Mail, Calendar, MessageSquare, Zap, CheckCircle, Menu, X } from 'lucide-react';
 import Footer from '@/components/Footer';
 import HomeRedirect from '@/components/HomeRedirect';
+import InteractiveDemo from '@/components/InteractiveDemo';
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -99,6 +100,29 @@ export default function Home() {
             </div>
             <p className="text-xs md:text-sm text-muted-foreground mt-4">
               7-day free trial • Cancel anytime
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Interactive Demo Section */}
+      <section id="demo" className="py-12 md:py-20 bg-gradient-to-b from-muted/30 to-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-8 md:mb-12">
+            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-3 md:mb-4">
+              See <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">AutoStaff AI</span> in Action
+            </h2>
+            <p className="text-base md:text-xl text-muted-foreground">
+              Watch how AI handles a complete customer journey - from first email to booked appointment
+            </p>
+          </div>
+          <InteractiveDemo />
+          <div className="text-center mt-8">
+            <Button size="lg" asChild>
+              <Link href="/sign-up">Start Your Free Trial</Link>
+            </Button>
+            <p className="text-sm text-muted-foreground mt-3">
+              No credit card required • 7-day free trial
             </p>
           </div>
         </div>
