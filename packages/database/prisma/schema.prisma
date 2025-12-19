@@ -41,6 +41,8 @@ model User {
   gmailEmail          String?
   gmailAccessToken    String?
   gmailRefreshToken   String?
+  gmailConsecutiveFailures Int   @default(0)
+  gmailLastFailureAt  DateTime?
   calendarConnected   Boolean  @default(false)
   calendarAccessToken String?
   calendarRefreshToken String?

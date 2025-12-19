@@ -115,11 +115,12 @@ export class EmailPollerService {
     this.logger.log('🔍 Checking for new emails...');
 
     try {
-      // Get all users with Gmail connected
+      // Get all users with Gmail connected, excluding those with too many failures
       const users = await this.prisma.user.findMany({
         where: {
           gmailConnected: true,
           gmailAccessToken: { not: null },
+          gmailConsecutiveFailures: { lt: 5 }, // Skip users with 5+ failures
         },
       });
 
@@ -496,6 +497,15 @@ ${user.businessName || 'Your Team'}`;
         `User ${userId}: Found ${messages.length} unread emails`,
       );
 
+      // Reset failure count on successful connection
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          gmailConsecutiveFailures: 0,
+          gmailLastFailureAt: null,
+        },
+      });
+
       if (messages.length === 0) return;
 
       for (const message of messages) {
@@ -510,6 +520,42 @@ ${user.businessName || 'Your Team'}`;
       }
     } catch (error) {
       this.logger.error(`Error getting emails for user ${userId}:`, error);
+      
+      // Check if it's an invalid_grant error (expired/revoked token)
+      if (error.message?.includes('invalid_grant') || error.toString().includes('invalid_grant')) {
+        this.logger.warn(`🔐 Invalid grant detected for user ${userId}`);
+        
+        // Increment failure count
+        const user = await this.prisma.user.findUnique({
+          where: { id: userId },
+          select: { gmailConsecutiveFailures: true },
+        });
+        
+        const failureCount = (user?.gmailConsecutiveFailures || 0) + 1;
+        
+        if (failureCount >= 5) {
+          // Disconnect Gmail after 5 consecutive failures
+          this.logger.error(`❌ Disconnecting Gmail for user ${userId} after ${failureCount} failures`);
+          await this.prisma.user.update({
+            where: { id: userId },
+            data: {
+              gmailConnected: false,
+              gmailConsecutiveFailures: failureCount,
+              gmailLastFailureAt: new Date(),
+            },
+          });
+          // TODO: Send notification email to user about disconnection
+        } else {
+          this.logger.warn(`⚠️ Gmail failure ${failureCount}/5 for user ${userId}`);
+          await this.prisma.user.update({
+            where: { id: userId },
+            data: {
+              gmailConsecutiveFailures: failureCount,
+              gmailLastFailureAt: new Date(),
+            },
+          });
+        }
+      }
     }
   }
 
