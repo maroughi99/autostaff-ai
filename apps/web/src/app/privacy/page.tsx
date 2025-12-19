@@ -152,7 +152,7 @@ export default function PrivacyPolicy() {
                 If you have any questions about this Privacy Policy, please contact us at:
               </p>
               <p className="text-gray-700 mt-2">
-                Email: <a href="mailto:privacy@workbot-ai.com" className="text-blue-600 hover:underline">privacy@workbot-ai.com</a>
+                Email: <a href="mailto:privacy@autostaffai.com" className="text-blue-600 hover:underline">privacy@autostaffai.com</a>
               </p>
             </section>
           </div>
