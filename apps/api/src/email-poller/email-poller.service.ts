@@ -630,7 +630,7 @@ ${user.businessName || 'Your Team'}`;
     // Apply email filters
     const spamFilter = userAutomationSettings.spamFilter !== false; // Default true
     const autoArchiveMarketing = userAutomationSettings.autoArchiveMarketing === true; // Default false
-    const requireApprovalForNew = userAutomationSettings.requireApprovalForNew !== false; // Default true
+    const requireApprovalForNew = userAutomationSettings.requireApprovalForNew === true; // Default false
 
     // Check spam filter
     if (spamFilter && this.isSpamEmail(from, subject, body)) {

@@ -57,7 +57,7 @@ export default function AutomationPage() {
   // Email Filters
   const [spamFilter, setSpamFilter] = useState(true);
   const [autoArchiveMarketing, setAutoArchiveMarketing] = useState(false);
-  const [requireApprovalForNew, setRequireApprovalForNew] = useState(true);
+  const [requireApprovalForNew, setRequireApprovalForNew] = useState(false);
   
   // Calendar & Booking
   const [autoBookAppointments, setAutoBookAppointments] = useState(false);
@@ -130,7 +130,7 @@ export default function AutomationPage() {
         // Email Filters
         setSpamFilter(data.spamFilter ?? true);
         setAutoArchiveMarketing(data.autoArchiveMarketing ?? false);
-        setRequireApprovalForNew(data.requireApprovalForNew ?? true);
+        setRequireApprovalForNew(data.requireApprovalForNew ?? false);
         
         // Calendar & Booking
         setAutoBookAppointments(data.autoBookAppointments ?? false);
