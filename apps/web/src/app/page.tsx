@@ -28,6 +28,9 @@ export default function Home() {
             <Link href="#pricing" className="text-sm font-medium hover:text-primary">
               Pricing
             </Link>
+            <Link href="/privacy" className="text-sm font-medium hover:text-primary">
+              Privacy
+            </Link>
             <Link href="/sign-in" className="text-sm font-medium hover:text-primary">
               Sign In
             </Link>
@@ -64,6 +67,13 @@ export default function Home() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Pricing
+              </Link>
+              <Link 
+                href="/privacy" 
+                className="text-sm font-medium hover:text-primary py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Privacy
               </Link>
               <Link 
                 href="/sign-in" 
