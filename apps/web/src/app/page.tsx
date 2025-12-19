@@ -29,7 +29,7 @@ export default function Home() {
               Pricing
             </Link>
             <Link href="/privacy" className="text-sm font-medium hover:text-primary">
-              Privacy
+              Privacy Policy
             </Link>
             <Link href="/sign-in" className="text-sm font-medium hover:text-primary">
               Sign In
@@ -73,7 +73,7 @@ export default function Home() {
                 className="text-sm font-medium hover:text-primary py-2"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Privacy
+                Privacy Policy
               </Link>
               <Link 
                 href="/sign-in" 
