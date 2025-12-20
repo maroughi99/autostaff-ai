@@ -48,6 +48,7 @@ export default function DashboardLayout({
     { href: '/dashboard/inbox', icon: <Mail className="h-5 w-5" />, label: 'Inbox', locked: false },
     { href: '/dashboard/leads', icon: <Users className="h-5 w-5" />, label: 'Leads', locked: false },
     { href: '/dashboard/customers', icon: <Briefcase className="h-5 w-5" />, label: 'Customers', locked: false },
+    { href: '/dashboard/quotes', icon: <FileText className="h-5 w-5" />, label: 'Quotes', locked: false },
     { href: '/dashboard/calendar', icon: <Calendar className="h-5 w-5" />, label: 'Calendar', locked: isFeatureLocked('calendar') },
     { href: '/dashboard/billing', icon: <DollarSign className="h-5 w-5" />, label: 'Billing', locked: false },
     { href: '/dashboard/subscription', icon: <CreditCard className="h-5 w-5" />, label: 'Subscription', locked: false },
