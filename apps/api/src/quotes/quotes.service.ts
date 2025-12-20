@@ -281,6 +281,7 @@ export class QuotesService {
             ` : ''}
             
             <!-- Accept/Reject Buttons -->
+            <!-- Links use API_URL environment variable -->
             <div style="margin: 30px 0; text-align: center;">
               <p style="font-size: 16px; font-weight: bold; margin-bottom: 15px;">Ready to move forward?</p>
               <a href="${process.env.API_URL || 'http://localhost:3001'}/quotes/${quote.id}/accept" 
