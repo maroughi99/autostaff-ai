@@ -12,6 +12,7 @@ import { downloadQuotePDF } from '@/lib/pdf-generator';
 import { useSubscription } from "@/hooks/useSubscription";
 import { FeatureLocked } from "@/components/FeatureLocked";
 import { API_URL } from '@/lib/utils';
+import { useToast } from "@/hooks/use-toast";
 
 interface QuoteItem {
   id: string;
@@ -77,6 +78,7 @@ interface Quote {
 
 export default function QuotesPage() {
   const { user } = useUser();
+  const { toast } = useToast();
   const { hasFeature, plan, loading: subscriptionLoading } = useSubscription();
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
@@ -162,16 +164,27 @@ export default function QuotesPage() {
         throw new Error(errorMessage);
       }
 
-      alert('Quote sent successfully!');
+      toast({
+        title: "Quote sent successfully!",
+        description: "The quote has been emailed to the customer.",
+      });
       fetchQuotes();
     } catch (error: any) {
       console.error('Failed to send quote:', error);
       const errorMsg = error.message || 'Failed to send quote';
       
       if (errorMsg.includes('Gmail not connected')) {
-        alert('❌ Gmail Not Connected\n\nPlease connect your Gmail account in Settings to send quotes via email.');
+        toast({
+          variant: "destructive",
+          title: "Gmail Not Connected",
+          description: "Please connect your Gmail account in Settings to send quotes via email.",
+        });
       } else {
-        alert(`❌ Error: ${errorMsg}`);
+        toast({
+          variant: "destructive",
+          title: "Failed to send quote",
+          description: errorMsg,
+        });
       }
     }
   };
