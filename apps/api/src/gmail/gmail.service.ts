@@ -256,8 +256,7 @@ export class GmailService {
         `Content-Type: multipart/mixed; boundary="${boundary}"`,
         '',
         `--${boundary}`,
-        `Content-Type: text/html; charset=UTF-8`,
-        `Content-Transfer-Encoding: 7bit`,
+        `Content-Type: text/html; charset="UTF-8"`,
         '',
         htmlBody,
         '',
@@ -269,7 +268,7 @@ export class GmailService {
         attachmentData,
         '',
         `--${boundary}--`,
-      ].join('\n');
+      ].join('\r\n');
 
       const encodedMessage = Buffer.from(message)
         .toString('base64')
