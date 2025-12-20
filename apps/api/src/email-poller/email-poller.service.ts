@@ -989,7 +989,18 @@ ${user.businessName || 'Your Team'}`;
         const minQuoteAmount = userAutomationSettings.minQuoteAmount || 100;
         const maxQuoteAmount = userAutomationSettings.maxQuoteAmount || 10000;
         
-        if (autoGenerateQuotes) {
+        // Check if we have enough information to generate a meaningful quote
+        const hasProjectDetails = body.length > 50; // At least some description
+        const hasSufficientInfo = leadInfo.serviceType || leadInfo.address || 
+                                  body.toLowerCase().includes('sq ft') || 
+                                  body.toLowerCase().includes('square') ||
+                                  /\d+\s*(ft|feet|yard|meter)/i.test(body);
+        
+        if (!hasSufficientInfo) {
+          this.logger.log('⚠️ Insufficient information for quote - AI should ask for more details first');
+        }
+        
+        if (autoGenerateQuotes && hasSufficientInfo) {
           this.logger.log(`🤖 Auto-generate quotes enabled - generating AI quote`);
           
           try {
