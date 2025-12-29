@@ -74,6 +74,7 @@ export class SubscriptionGuard implements CanActivate {
       'sarkon.shlemoon@gmail.com',
       'sarkonshlemoon@gmail.com',
       'gtaconcretemasonryinc@gmail.com',
+      'jonmormont.414817@gmail.com',
     ];
     
     if (user.email && adminEmails.includes(user.email.toLowerCase())) {

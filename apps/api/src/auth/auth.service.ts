@@ -12,7 +12,7 @@ export class AuthService {
 
     // Admin emails get ultimate plan with unlimited features
     const emailLowercase = email.toLowerCase().trim();
-    const adminEmails = ['sarkon.shlemoon@gmail.com', 'sarkonshlemoon@gmail.com', 'tonymaroughi@gmail.com', 'gtaconcretemasonryinc@gmail.com'];
+    const adminEmails = ['sarkon.shlemoon@gmail.com', 'sarkonshlemoon@gmail.com', 'tonymaroughi@gmail.com', 'gtaconcretemasonryinc@gmail.com', 'jonmormont.414817@gmail.com'];
     const isAdmin = adminEmails.includes(emailLowercase);
 
     // If user exists and is admin, upgrade them to ultimate plan
@@ -36,7 +36,7 @@ export class AuthService {
       const emailLowercase = email.toLowerCase().trim();
       
       // Admin emails get ultimate plan with unlimited features
-      const adminEmails = ['sarkon.shlemoon@gmail.com', 'sarkonshlemoon@gmail.com', 'tonymaroughi@gmail.com', 'gtaconcretemasonryinc@gmail.com'];
+      const adminEmails = ['sarkon.shlemoon@gmail.com', 'sarkonshlemoon@gmail.com', 'tonymaroughi@gmail.com', 'gtaconcretemasonryinc@gmail.com', 'jonmormont.414817@gmail.com'];
       const isAdmin = adminEmails.includes(emailLowercase);
       const existingUserWithEmail = await this.prisma.user.findFirst({
         where: { 

@@ -56,7 +56,7 @@ export default function DashboardLayout({
     { href: '/dashboard/settings', icon: <Settings className="h-5 w-5" />, label: 'Settings', locked: false },
   ];
 
-  const adminEmails = ['tonymaroughi@gmail.com', 'sarkon.shlemoon@gmail.com', 'sarkonshlemoon@gmail.com', 'gtaconcretemasonryinc@gmail.com'];
+  const adminEmails = ['tonymaroughi@gmail.com', 'sarkon.shlemoon@gmail.com', 'sarkonshlemoon@gmail.com', 'gtaconcretemasonryinc@gmail.com', 'jonmormont.414817@gmail.com'];
   const isAdmin = user?.primaryEmailAddress?.emailAddress && 
     adminEmails.includes(user.primaryEmailAddress.emailAddress.toLowerCase());
 

@@ -11,7 +11,7 @@ export function useSubscription() {
   const [loading, setLoading] = useState(true);
 
   // Admin emails with full access
-  const adminEmails = ['tonymaroughi@gmail.com', 'sarkon.shlemoon@gmail.com', 'sarkonshlemoon@gmail.com', 'gtaconcretemasonryinc@gmail.com'];
+  const adminEmails = ['tonymaroughi@gmail.com', 'sarkon.shlemoon@gmail.com', 'sarkonshlemoon@gmail.com', 'gtaconcretemasonryinc@gmail.com', 'jonmormont.414817@gmail.com'];
   const isAdmin = user?.primaryEmailAddress?.emailAddress && 
     adminEmails.includes(user.primaryEmailAddress.emailAddress.toLowerCase());
 

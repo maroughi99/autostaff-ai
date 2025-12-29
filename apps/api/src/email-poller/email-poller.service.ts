@@ -632,6 +632,107 @@ ${user.businessName || 'Your Team'}`;
     const autoArchiveMarketing = userAutomationSettings.autoArchiveMarketing === true; // Default false
     const requireApprovalForNew = userAutomationSettings.requireApprovalForNew === true; // Default false
 
+    // *** CHECK FOR AUTOMATIC REPLIES TO PREVENT INFINITE LOOPS ***
+    
+    // 1. Check for auto-reply/out-of-office headers
+    const autoSubmittedHeader = headers.find((h) => h.name?.toLowerCase() === 'auto-submitted');
+    const autoReplyHeader = headers.find((h) => h.name?.toLowerCase() === 'x-autoreply');
+    const precedenceHeader = headers.find((h) => h.name?.toLowerCase() === 'precedence');
+    
+    if (autoSubmittedHeader?.value && autoSubmittedHeader.value !== 'no') {
+      this.logger.log(`🚫 Detected auto-submitted header: ${autoSubmittedHeader.value} - skipping automatic reply`);
+      await gmail.users.messages.modify({
+        userId: 'me',
+        id: messageId,
+        requestBody: { removeLabelIds: ['UNREAD'] },
+      });
+      return;
+    }
+    
+    if (autoReplyHeader?.value) {
+      this.logger.log(`🚫 Detected X-AutoReply header - skipping automatic reply`);
+      await gmail.users.messages.modify({
+        userId: 'me',
+        id: messageId,
+        requestBody: { removeLabelIds: ['UNREAD'] },
+      });
+      return;
+    }
+    
+    if (precedenceHeader?.value && ['auto_reply', 'auto-reply', 'bulk'].includes(precedenceHeader.value.toLowerCase())) {
+      this.logger.log(`🚫 Detected precedence header: ${precedenceHeader.value} - skipping automatic reply`);
+      await gmail.users.messages.modify({
+        userId: 'me',
+        id: messageId,
+        requestBody: { removeLabelIds: ['UNREAD'] },
+      });
+      return;
+    }
+    
+    // 2. Check for repeated "Automatic reply:" or "Re:" patterns in subject (indicating a loop)
+    const subjectLower = subject.toLowerCase();
+    const automaticReplyCount = (subject.match(/automatic reply:/gi) || []).length;
+    const reCount = (subject.match(/re:/gi) || []).length;
+    
+    if (automaticReplyCount >= 2) {
+      this.logger.log(`🚫 Detected reply loop - subject contains ${automaticReplyCount} "Automatic reply:" patterns - STOPPING`);
+      await gmail.users.messages.modify({
+        userId: 'me',
+        id: messageId,
+        requestBody: { removeLabelIds: ['UNREAD'] },
+      });
+      return;
+    }
+    
+    if (reCount >= 5) {
+      this.logger.log(`🚫 Detected potential reply loop - subject contains ${reCount} "Re:" patterns - STOPPING`);
+      await gmail.users.messages.modify({
+        userId: 'me',
+        id: messageId,
+        requestBody: { removeLabelIds: ['UNREAD'] },
+      });
+      return;
+    }
+    
+    // 3. Check for phrases indicating the email cannot receive replies
+    const noReplyPhrases = [
+      'cannot receive replies',
+      'do not reply',
+      'no-reply',
+      'noreply',
+      'automatically generated',
+      'automatic reply',
+      'auto-reply',
+      'out of office',
+      'out of the office',
+      'away from my desk',
+    ];
+    
+    const bodyLower = body.toLowerCase();
+    const hasNoReplyPhrase = noReplyPhrases.some(phrase => bodyLower.includes(phrase));
+    
+    if (hasNoReplyPhrase || subjectLower.includes('automatic reply') || subjectLower.includes('auto-reply') || subjectLower.includes('out of office')) {
+      this.logger.log(`🚫 Detected automatic reply or no-reply email - skipping response to prevent loop`);
+      await gmail.users.messages.modify({
+        userId: 'me',
+        id: messageId,
+        requestBody: { removeLabelIds: ['UNREAD'] },
+      });
+      return;
+    }
+    
+    // 4. Check from address for no-reply patterns
+    const fromLower = from.toLowerCase();
+    if (fromLower.includes('noreply@') || fromLower.includes('no-reply@') || fromLower.includes('donotreply@')) {
+      this.logger.log(`🚫 Detected no-reply sender address: ${from} - skipping response`);
+      await gmail.users.messages.modify({
+        userId: 'me',
+        id: messageId,
+        requestBody: { removeLabelIds: ['UNREAD'] },
+      });
+      return;
+    }
+
     // Check spam filter
     if (spamFilter && this.isSpamEmail(from, subject, body)) {
       this.logger.log(`🚫 Spam detected - skipping email from ${from}`);
@@ -803,6 +904,50 @@ ${user.businessName || 'Your Team'}`;
     if (!autoRespondEnabled) {
       this.logger.log(`🚫 Auto-respond disabled for user - skipping AI response generation`);
       return;
+    }
+
+    // *** CIRCUIT BREAKER: Check for rapid back-and-forth to prevent loops ***
+    const recentMessages = await this.prisma.message.findMany({
+      where: {
+        leadId: lead.id,
+        createdAt: {
+          gte: new Date(Date.now() - 60 * 60 * 1000), // Last hour
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    });
+
+    // Count consecutive outbound messages in recent history
+    const recentOutboundCount = recentMessages.filter(m => m.direction === 'outbound').length;
+    
+    if (recentOutboundCount >= 3) {
+      this.logger.warn(`🛑 CIRCUIT BREAKER TRIGGERED: ${recentOutboundCount} outbound messages sent to ${senderEmail} in the last hour. Stopping to prevent loop.`);
+      await gmail.users.messages.modify({
+        userId: 'me',
+        id: messageId,
+        requestBody: { removeLabelIds: ['UNREAD'] },
+      });
+      return;
+    }
+    
+    // Check if the last 4 messages alternate between inbound/outbound (possible loop)
+    if (recentMessages.length >= 4) {
+      const last4 = recentMessages.slice(0, 4);
+      const isAlternating = last4.every((msg, idx) => {
+        if (idx === 0) return true;
+        return msg.direction !== last4[idx - 1].direction;
+      });
+      
+      if (isAlternating) {
+        this.logger.warn(`🛑 CIRCUIT BREAKER TRIGGERED: Detected alternating message pattern (possible auto-reply loop). Stopping.`);
+        await gmail.users.messages.modify({
+          userId: 'me',
+          id: messageId,
+          requestBody: { removeLabelIds: ['UNREAD'] },
+        });
+        return;
+      }
     }
 
     // Generate AI response
