@@ -1247,6 +1247,11 @@ ${user.businessName || 'Your Team'}`;
         this.logger.log(`👤 New contact detected - requiring approval before responding`);
       }
 
+      // Check if we should send out-of-office message
+      const shouldSendOutOfOffice = !isWithinWorkingHours && 
+        userAutomationSettings.autoResponseOutsideHours === true &&
+        userAutomationSettings.outOfOfficeMessage;
+
       // If user has auto-approve ON AND we're within working hours AND not a new contact (or filter disabled), send automatically
       const shouldAutoSend = userSettings?.aiAutoApprove === true && isWithinWorkingHours && !needsApprovalDueToNewContact;
 
@@ -1286,6 +1291,41 @@ ${user.businessName || 'Your Team'}`;
         }
       } else if (!isWithinWorkingHours) {
         this.logger.log(`⏰ AI response delayed - outside working hours (ID: ${draftMessage.id})`);
+        
+        // Send out-of-office message if configured
+        if (shouldSendOutOfOffice) {
+          try {
+            const outOfOfficeSubject = subject.startsWith('Re:') ? subject : `Re: ${subject}`;
+            await this.gmailService.sendMessage(
+              clerkId,
+              senderEmail,
+              outOfOfficeSubject,
+              userAutomationSettings.outOfOfficeMessage,
+              threadId,
+              incomingMessageId,
+              references ? `${references} ${incomingMessageId}` : incomingMessageId,
+            );
+            
+            // Log the out-of-office message in database
+            await this.prisma.message.create({
+              data: {
+                leadId: lead.id,
+                direction: 'outbound',
+                channel: 'email',
+                subject: outOfOfficeSubject,
+                content: userAutomationSettings.outOfOfficeMessage,
+                fromEmail: to,
+                toEmail: senderEmail,
+                isAiGenerated: false,
+                sentAt: new Date(),
+              },
+            });
+            
+            this.logger.log(`📧 Sent out-of-office message to ${senderEmail}`);
+          } catch (error) {
+            this.logger.error(`❌ Failed to send out-of-office message:`, error);
+          }
+        }
       } else if (aiReply.needsApproval) {
         this.logger.log(`✋ AI response needs approval (ID: ${draftMessage.id})`);
       } else {
