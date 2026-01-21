@@ -149,6 +149,9 @@ export default function AutomationPage() {
   const saveSettings = async () => {
     if (!user?.id) return;
     
+    // Note: We allow end time <= start time to support overnight shifts (e.g., 22:00 to 06:00)
+    // Server-side validation will ensure the time format is correct
+    
     setSaving(true);
     try {
       const settings = {
@@ -204,14 +207,17 @@ export default function AutomationPage() {
         body: JSON.stringify(settings),
       });
 
-      if (response.ok) {
+      const result = await response.json();
+
+      if (response.ok && result.success) {
         toast.success('Automation settings saved successfully! ⚙️');
       } else {
-        throw new Error('Failed to save settings');
+        throw new Error(result.error || 'Failed to save settings');
       }
     } catch (error) {
       console.error('Failed to save automation settings:', error);
-      toast.error('Failed to save settings. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save settings. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }

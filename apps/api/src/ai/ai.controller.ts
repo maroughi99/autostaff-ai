@@ -101,6 +101,22 @@ export class AiController {
       return { error: 'userId is required' };
     }
 
+    // Validate working hours if provided
+    if (settings.workingHoursStart && settings.workingHoursEnd) {
+      const timeRegex = /^([0-1][0-9]|2[0-3]):[0-5][0-9]$/;
+      
+      if (!timeRegex.test(settings.workingHoursStart)) {
+        return { error: 'Invalid workingHoursStart format. Expected HH:MM in 24-hour format (e.g., 09:00, 18:00).' };
+      }
+      
+      if (!timeRegex.test(settings.workingHoursEnd)) {
+        return { error: 'Invalid workingHoursEnd format. Expected HH:MM in 24-hour format (e.g., 09:00, 18:00).' };
+      }
+
+      // Note: We allow end time <= start time to support overnight shifts (e.g., 22:00 to 06:00)
+      // The logic in email-poller and messages services will handle this correctly
+    }
+
     try {
       // Find user by Clerk ID or database ID
       const user = await this.prisma.user.findFirst({

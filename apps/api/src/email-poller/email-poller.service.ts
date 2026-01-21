@@ -101,7 +101,18 @@ export class EmailPollerService {
     const startMinutes = startHour * 60 + startMin;
     const endMinutes = endHour * 60 + endMin;
 
-    const isWithinHours = currentTime >= startMinutes && currentTime < endMinutes;
+    // Handle both same-day shifts and overnight shifts
+    let isWithinHours: boolean;
+    
+    if (endMinutes > startMinutes) {
+      // Same-day shift (e.g., 09:00 to 17:00)
+      isWithinHours = currentTime >= startMinutes && currentTime < endMinutes;
+    } else {
+      // Overnight shift (e.g., 22:00 to 06:00)
+      // Within hours if: after start time OR before end time
+      isWithinHours = currentTime >= startMinutes || currentTime < endMinutes;
+      this.logger.log(`[WORKING HOURS] Overnight shift detected: ${startTime}-${endTime}`);
+    }
     
     if (!isWithinHours) {
       this.logger.log(`[WORKING HOURS] Current time ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')} is outside working hours ${startTime}-${endTime}`);
